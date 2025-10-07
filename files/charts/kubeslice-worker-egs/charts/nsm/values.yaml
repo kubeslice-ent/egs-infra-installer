@@ -85,7 +85,7 @@ nsmgr:
     limits:
       memory: 200Mi
       cpu: 500m
-  tolerations: {}
+  tolerations:
     - key: "kubeslice.io/egs"
       operator: "Equal"
       value: "dedicated-node"
@@ -144,7 +144,7 @@ registryK8s:
     limits:
       memory: 100Mi
       cpu: 600m
-  tolerations: {}
+  tolerations:
     - key: "kubeslice.io/egs"
       operator: "Equal"
       value: "dedicated-node"
