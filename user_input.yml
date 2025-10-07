@@ -357,7 +357,7 @@ helm_charts:
           labels: {}
           annotations: {}
         kubeTally:
-          enabled: false
+          enabled: true
           postgresSecretName: kubetally-db-credentials
           postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local"
           postgresPort: 5432
@@ -409,8 +409,12 @@ helm_charts:
                   - path: /
                     pathType: Prefix
             tls: []
-            annotations: []
+            annotations: {}
             extraLabels: {}
+        apigw:
+          env:
+            - name: DCGM_METRIC_JOB_VALUE
+              value: nvidia-dcgm-exporter
         egsCoreApis:
           enabled: true
           service:
@@ -441,9 +445,20 @@ helm_charts:
         endpoint: "https://{{ kubernetes_deployment.api_server.host }}:{{ kubernetes_deployment.api_server.port }}"
       global:
         imageRegistry: "harbor.saas1.smart-scaler.io/avesha/aveshasystems"
+      kubesliceNetworking:
+        enabled: true
+      operator:
+        env:
+          - name: DCGM_EXPORTER_JOB_NAME
+            value: gpu-metrics
       egs:
         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
+      egsAgent:
+        secretName: egs-agent-access
+        agentSecret:
+          endpoint: ""
+          key: ""
       metrics:
         insecure: true
       kserve:
