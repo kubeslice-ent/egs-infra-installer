@@ -372,6 +372,47 @@ kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 909
 - **Grafana Dashboard**: [http://localhost:3000](http://localhost:3000) (admin/prom-operator)
 - **Prometheus UI**: [http://localhost:9090](http://localhost:9090)
 
+---
+
+## 6. Multiple Worker Cluster Registration
+
+For production deployments, you may need to register multiple worker clusters with your EGS controller. There are two approaches to register additional worker clusters:
+
+### Option 1: Using EGS Installation Script (Recommended)
+
+For comprehensive multi-cluster setup with detailed configuration options, use the official EGS installation script:
+
+📖 **[EGS Installation Guide](https://github.com/kubeslice-ent/egs-installation)**
+
+The EGS installation script provides:
+- **Complete multi-cluster configuration** with detailed examples
+- **Cluster registration YAML** for multiple worker clusters
+- **Telemetry endpoint configuration** for each cluster
+- **Geographic distribution** settings (cloud provider, region)
+- **Prometheus endpoint accessibility** guidance for multi-cluster setups
+- **Preflight checks** and troubleshooting tools
+
+**Key Features:**
+- Support for workers in different Kubernetes clusters
+- LoadBalancer/NodePort service configuration for cross-cluster access
+- Comprehensive cluster registration examples
+- Telemetry and monitoring setup for each cluster
+
+### Option 2: Using EGS UI (Alternative)
+
+For simpler cluster registration, you can use the EGS management UI:
+
+📖 **[Register Clusters via UI](https://docs.avesha.io/documentation/enterprise-egs/1.15.0/admin-operations/register-clusters/)**
+
+The UI approach provides:
+- **Interactive cluster registration** through the web interface
+- **Simplified configuration** without YAML files
+- **Real-time status monitoring** of cluster registration
+- **Visual cluster management** and monitoring
+
+**When to Use Each Approach:**
+- **EGS Installation Script**: For complex multi-cluster setups, automated deployments, or when you need detailed configuration control
+- **EGS UI**: For simple cluster additions, quick setup, or when you prefer a graphical interface
 
 ---
 
@@ -425,41 +466,17 @@ kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 909
 ### Debug Commands
 
 ```bash
-# Check all pods status
+# Check pod status and logs
 kubectl get pods --all-namespaces
-
-# Check EGS component logs
 kubectl logs -n kubeslice-controller deployment/egs-controller
 kubectl logs -n kubeslice-controller deployment/egs-ui
-kubectl logs -n kubeslice-system deployment/egs-worker
 
-# Check infrastructure component logs
-kubectl logs -n gpu-operator deployment/gpu-operator
-kubectl logs -n monitoring deployment/prometheus-grafana
-kubectl logs -n monitoring deployment/prometheus-kube-prometheus-operator
-
-# Check EGS license status
-kubectl get secret egs-license-file -n kubeslice-controller -o yaml
-kubectl describe secret egs-license-file -n kubeslice-controller
-
-# Check service status
+# Check license and services
+kubectl get secret egs-license-file -n kubeslice-controller
 kubectl get svc --all-namespaces
 
-# Check ingress status
-kubectl get ingress --all-namespaces
-
-# Check persistent volumes
-kubectl get pv
-kubectl get pvc --all-namespaces
-
-# Check node resources
+# Check resources and events
 kubectl top nodes
-kubectl describe nodes
-
-# Check GPU resources
-kubectl get nodes -o json | jq '.items[].status.allocatable | with_entries(select(.key | contains("nvidia")))'
-
-# Check events
 kubectl get events --all-namespaces --sort-by='.lastTimestamp'
 ```
 
