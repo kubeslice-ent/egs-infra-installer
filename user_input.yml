@@ -344,7 +344,7 @@ helm_charts:
     release_namespace: "kubeslice-controller"
     create_namespace: true
     wait: true
-    timeout: "400s"
+    timeout: "500s"
     force: true
     atomic: false
     skip_diff: true
@@ -380,7 +380,7 @@ helm_charts:
     chart_ref: "./kubeslice-ui-egs"           # Using relative path
     release_namespace: "kubeslice-controller"
     create_namespace: true
-    wait: true
+    wait: false
     timeout: "400s"
     force: true
     atomic: false
@@ -430,7 +430,7 @@ helm_charts:
     chart_ref: "./kubeslice-worker-egs"       # Using relative path
     release_namespace: "kubeslice-system"
     create_namespace: true
-    wait: true
+    wait: false
     timeout: "400s"
     force: true
     atomic: false
