@@ -324,7 +324,7 @@ kubectl get secret egs-license-file -n kubeslice-controller
 NAMESPACE              NAME                                                          READY   STATUS      RESTARTS      AGE
 gpu-operator           gpu-feature-discovery-l6sj7                                   1/1     Running     0             39m
 gpu-operator           gpu-operator-669c87dd9-fgjr4                                  1/1     Running     0             70m
-gpu-operator           nvidia-device-plugin-daemonset-nzjq6                          1/1     Running     1 (39m ago)   40m
+gpu-operator           nvidia-device-plugin-daemonset-nzjq6                          1/1     Running     0             40m
 gpu-operator           nvidia-dcgm-exporter-psqc5                                    1/1     Running     0             39m
 kt-postgresql          kt-postgresql-0                                               1/1     Running     0             25s
 kubeslice-controller   egs-core-apis-56b6d94d58-w88bz                                1/1     Running     0             52m
@@ -360,7 +360,11 @@ kubectl get svc kubeslice-ui-proxy -n kubeslice-controller -o jsonpath='{.status
 kubectl get svc kubeslice-ui-proxy -n kubeslice-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null
 
 # For NodePort service type
+# Try ExternalIP first, fallback to InternalIP if not available
 NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null | head -n1)
+if [ -z "$NODE_IP" ]; then
+    NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null | head -n1)
+fi
 NODE_PORT=$(kubectl get svc kubeslice-ui-proxy -n kubeslice-controller -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null)
 echo "https://$NODE_IP:$NODE_PORT"
 
@@ -447,6 +451,7 @@ The UI approach provides:
 - **[Kubernetes Firewall Configuration](docs/KUBERNETES_FIREWALL.md)** - Network and firewall setup
 - **[NVIDIA Container Runtime Configuration](docs/NVIDIA_CONTAINER_RUNTIME.md)** - GPU runtime setup
 - **[EGS License Setup](docs/EGS-License-Setup.md)** - EGS license configuration guide
+- **[Retry Mechanism](docs/RETRY_MECHANISM.md)** - Retry mechanism configuration and troubleshooting
 
 ---
 
