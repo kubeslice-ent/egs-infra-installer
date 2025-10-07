@@ -262,7 +262,6 @@ execution_order:
   # Base Applications
   - gpu_operator_chart
   - prometheus_stack
-  - generate_cluster_fingerprint  # Generate cluster fingerprint for EGS license
   - validate_and_apply_egs_license  # Validate and apply EGS license before EGS installation
 
   # AMD GPU Support
@@ -916,14 +915,6 @@ manifests:
 
 command_exec:
 
-  - name: "generate_cluster_fingerprint"
-    kubeconfig: "{{ kubeconfig | default(global_kubeconfig) }}"
-    kubecontext: "{{ kubecontext | default(global_kubecontext) }}"
-    commands:
-      - cmd: "bash {{ playbook_dir }}/files/generate-cluster-fingerprint.sh"
-        env:
-          KUBECONFIG: "{{ kubeconfig | default(global_kubeconfig) }}"
-          KUBECONTEXT: "{{ kubecontext | default(global_kubecontext) }}"
 
   - name: "validate_and_apply_egs_license"
     kubeconfig: "{{ kubeconfig | default(global_kubeconfig) }}"

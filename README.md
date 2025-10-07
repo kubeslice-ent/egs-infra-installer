@@ -211,27 +211,26 @@ sed -i \
 
 ### Step 4.1: Generate Cluster Fingerprint
 
-The installer will automatically generate a cluster fingerprint required for EGS license generation:
-
-**Important**: Make sure `kubernetes_deployment.enabled` is set to `false` in `user_input.yml` before running this command.
+Generate the cluster fingerprint required for EGS license generation:
 
 ```bash
-# Run the deployment to generate cluster fingerprint
-ansible-playbook site.yml --extra-vars "execution_order=['generate_cluster_fingerprint']"
+# Generate cluster fingerprint
+kubectl get namespace kube-system -o=jsonpath='{.metadata.creationTimestamp}{.metadata.uid}{"\n"}'
 ```
 
-The cluster fingerprint will be saved to `output/cluster-fingerprint.txt`.
+Copy the output and save it for the next step.
 
 ### Step 4.2: Get EGS License
 
-1. **Visit EGS Registration Portal**: Go to [https://registration.kubeslice.io/](https://registration.kubeslice.io/)
-2. **Sign In**: Use your Avesha account credentials
-3. **Generate License**: 
-   - Navigate to "License Management" section
-   - Click "Generate New License"
-   - Paste the cluster fingerprint from `output/cluster-fingerprint.txt`
-   - Select your license type and duration
-   - Download the generated license file
+1. **Visit EGS Registration Portal**: Go to [https://avesha.io/egs-registration](https://avesha.io/egs-registration)
+2. **Fill out the registration form**:
+   - Enter your full name, company name, title/position
+   - Provide your work email address
+   - Paste the cluster fingerprint from Step 4.1
+   - Select your cloud type
+   - Agree to terms and conditions
+3. **Submit registration** and wait for Avesha to process your request
+4. **Receive license file** via email from Avesha
 
 ### Step 4.3: Place License File
 
@@ -401,11 +400,6 @@ kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 909
    - Check `nvidia_runtime.enabled` is set to `true`
    - Review GPU operator pod status
 
-5. **Cluster Fingerprint Generation Failed**
-   - Ensure `kubernetes_deployment.enabled` is set to `false` in `user_input.yml`
-   - Verify kubeconfig file exists at `output/kubeconfig`
-   - Check that kubectl can access the cluster: `kubectl get nodes`
-   - Ensure the cluster is running and accessible
 
 ### Debug Commands
 
@@ -476,8 +470,7 @@ The deployment process follows a specific execution order defined in `user_input
 - `amd_gpu_deviceconfig_manifest` - AMD GPU device configuration and settings
 
 #### EGS Installation
-- `generate_cluster_fingerprint` - Generate cluster fingerprint for license (REQUIRED FIRST)
-- `validate_and_apply_egs_license` - Validate and apply EGS license (REQUIRED SECOND)
+- `validate_and_apply_egs_license` - Validate and apply EGS license (REQUIRED FIRST)
 - `kubeslice_controller_egs_chart` - KubeSlice EGS controller for multi-cluster management
 - `kubeslice_ui_egs_chart` - KubeSlice EGS management UI interface
 - `kubeslice_worker_egs_chart` - KubeSlice EGS worker for cluster management
@@ -497,14 +490,14 @@ ansible-playbook site.yml \
   --extra-vars "execution_order=['gpu_operator_chart','prometheus_stack']" \
   -vv
 
-# Execute EGS license setup first (required before any EGS components)
+# Execute EGS license validation (after manual license setup)
 ansible-playbook site.yml \
-  --extra-vars "execution_order=['generate_cluster_fingerprint','validate_and_apply_egs_license']" \
+  --extra-vars "execution_order=['validate_and_apply_egs_license']" \
   -vv
 
-# Execute EGS installation with license setup
+# Execute EGS installation with license validation
 ansible-playbook site.yml \
-  --extra-vars "execution_order=['generate_cluster_fingerprint','validate_and_apply_egs_license','kubeslice_controller_egs_chart','kubeslice_ui_egs_chart']" \
+  --extra-vars "execution_order=['validate_and_apply_egs_license','kubeslice_controller_egs_chart','kubeslice_ui_egs_chart']" \
   -vv
 
 # Execute AMD GPU operator setup (alternative to NVIDIA)
@@ -512,9 +505,9 @@ ansible-playbook site.yml \
   --extra-vars "execution_order=['cert_manager','amd_gpu_operator_chart','amd_gpu_deviceconfig_manifest']" \
   -vv
 
-# Execute complete EGS installation (license first, then components)
+# Execute complete EGS installation (license validation first, then components)
 ansible-playbook site.yml \
-  --extra-vars "execution_order=['generate_cluster_fingerprint','validate_and_apply_egs_license','kubeslice_controller_egs_chart','kubeslice_ui_egs_chart','kubeslice_worker_egs_chart','egs_project_manifest','egs_cluster_registration_worker_1','fetch_worker_secret_worker_1']" \
+  --extra-vars "execution_order=['validate_and_apply_egs_license','kubeslice_controller_egs_chart','kubeslice_ui_egs_chart','kubeslice_worker_egs_chart','egs_project_manifest','egs_cluster_registration_worker_1','fetch_worker_secret_worker_1']" \
   -vv
 
 # Execute only NGINX ingress setup
