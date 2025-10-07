@@ -283,29 +283,14 @@ The license file should contain a Kubernetes Secret with the name `egs-license-f
 
 ## 5. Instructions to Deploy EGS Apps
 
-### Step 5.1: Verify Prerequisites
-
-```bash
-# Verify cluster access
-kubectl get nodes
-kubectl cluster-info
-
-# Verify required tools
-kubectl version --client
-helm version
-
-# Verify cluster is accessible
-kubectl get nodes
-```
-
-### Step 5.2: Deploy EGS Applications
+### Step 5.1: Deploy EGS Applications
 
 ```bash
 # Deploy EGS applications
 ansible-playbook site.yml -vvvv
 ```
 
-### Step 5.3: Verify EGS Deployment
+### Step 5.2: Verify EGS Deployment
 
 ```bash
 # Check all namespaces
