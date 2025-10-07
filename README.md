@@ -215,6 +215,17 @@ sed -i \
   user_input.yml
 ```
 
+### KubeSlice Networking Configuration
+
+**Note**: KubeSlice networking is **disabled by default** in the EGS worker configuration:
+
+```yaml
+kubesliceNetworking:
+  enabled: false  # Disabled by default
+```
+
+If you need inter-cluster networking capabilities, you can enable it by setting `enabled: true` in the worker configuration. However, this is typically not required for EGS GPU sharing functionality.
+
 ---
 
 ## 4. EGS Prerequisites
