@@ -351,21 +351,59 @@ egs-ui-6465596cb9-4j54h                                   1/1     Running   0   
 egs-worker-dc4dd6d79-gzxpq                                1/1     Running   0          98m
 ```
 
-### Step 5.4: Accessing EGS UI and Monitoring
+### Step 5.4: EGS Management UI Access
 
-After deploying the EGS application stack, you can access the management interfaces:
+After successful EGS deployment, you can access the management UI and retrieve access tokens for project management.
 
-#### EGS UI Access
+#### Get EGS UI Access URL
+
+The EGS UI access method depends on your service configuration. Run the following commands to get the appropriate access URL:
 
 ```bash
-# Get EGS UI service details
-kubectl get svc -n kubeslice-controller
+# Check EGS UI service configuration
+kubectl get svc kubeslice-ui-proxy -n kubeslice-controller
 
-# Access EGS UI (replace with your node IP)
+# For LoadBalancer service type
+kubectl get svc kubeslice-ui-proxy -n kubeslice-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || \
+kubectl get svc kubeslice-ui-proxy -n kubeslice-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null
+
+# For NodePort service type
+NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null | head -n1)
+NODE_PORT=$(kubectl get svc kubeslice-ui-proxy -n kubeslice-controller -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null)
+echo "https://$NODE_IP:$NODE_PORT"
+
+# For ClusterIP service type (port-forward required)
 kubectl port-forward -n kubeslice-controller svc/kubeslice-ui-proxy 8080:443
+echo "https://localhost:8080"
 ```
 
-Then access the EGS UI at: [https://localhost:8080](https://localhost:8080)
+#### Get EGS Access Token
+
+To access the EGS UI, you'll need an access token. Retrieve it using the following command:
+
+```bash
+# Get access token for EGS UI
+kubectl get secret kubeslice-rbac-rw-admin -o jsonpath="{.data.token}" -n kubeslice-avesha --kubeconfig output/kubeconfig --context kubernetes-admin@cluster.local 2>/dev/null | base64 --decode
+```
+
+#### Access EGS Management UI
+
+1. **Open your browser** and navigate to the EGS UI URL from the previous step
+2. **Enter the access token** from the previous step when prompted for "Service Account Token"
+3. **Start managing** your EGS clusters, projects, and GPU resources
+
+#### Verify EGS Components
+
+```bash
+# Check EGS controller status
+kubectl get pods -n kubeslice-controller
+
+# Check EGS worker status  
+kubectl get pods -n kubeslice-system
+
+# Check EGS license status
+kubectl get secret egs-license-file -n kubeslice-controller
+```
 
 #### Monitoring Access
 
