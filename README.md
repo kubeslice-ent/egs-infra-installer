@@ -1,15 +1,14 @@
-# Smart Scaler Apps Installer
+# Avesha Apps Installer
 
-Ansible-based installer for Smart Scaler components and Kubernetes cluster deployment.
+Ansible-based installer for Avesha EGS (Enterprise Gateway Service) components and Kubernetes cluster deployment.
 
 ## Table of Contents
 
-
 1. [Prerequisites for Deploying K8s Cluster](#1-prerequisites-for-deploying-k8s-cluster) *(~2–3 mins)*  
 2. [Installation Steps for Deploying K8s Cluster](#2-installation-steps-for-deploying-k8s-cluster) *(~15–20 mins)*  
-3. [Prerequisites for Installing SmartScaler Apps](#3-prerequisites-for-installing-smartscaler-apps) *(~2 mins)*  
-4. [Instructions to Deploy SmartScaler Apps](#4-instructions-to-deploy-smartscaler-apps) *(Depends on NIM profiles 70b(~20-25 mins), 8b(~10-15 mins), 1b(~10 mins))*  
-5. [Example Test Run Steps](#example-test-run-steps) *(~15 mins)*  
+3. [Prerequisites for EGS Installation](#3-prerequisites-for-egs-installation) *(~2 mins)*  
+4. [EGS License Setup](#4-egs-license-setup) *(~5 mins)*  
+5. [Instructions to Deploy EGS Apps](#5-instructions-to-deploy-egs-apps) *(~10-15 mins)*  
 6. [Execution Order Control](#execution-order-control) *(optional) (~1 min)*  
 7. [Destroying the Kubernetes Cluster](#destroying-the-kubernetes-cluster) *(~5 mins)*  
 8. [Documentation Links](#documentation-links)  
@@ -21,33 +20,23 @@ Ansible-based installer for Smart Scaler components and Kubernetes cluster deplo
 
 ### System Requirements
 
-#### Control Plane Nodes (Master)
-
-- **CPU**: 8 cores minimum
-- **RAM**: 16GB minimum
-- **Storage**: 500GB minimum (Depends on NIM Profile Requirements for loading Image/Nim Cache PVC Requirements)
-- **OS**: Ubuntu 22.04+ or compatible Linux distribution
-
-#### Worker Nodes (Optional)
-
-- **CPU**: 8 cores minimum
-- **RAM**: 16GB minimum
-- **Storage**: 500GB minimum (Depends on NIM Profile Requirements for loading Image/Nim Cache PVC Requirements)
-- **OS**: Same as control plane nodes
+- **Operating System**: Ubuntu 20.04 LTS or later
+- **Minimum RAM**: 8GB per node (16GB recommended)
+- **CPU**: 4 cores per node (8 cores recommended)
+- **Storage**: 50GB free disk space per node
+- **Network**: All nodes must be able to communicate with each other
 
 ### Required Software
 
-- Python 3.x and pip
-- Git
-- SSH key generation capability
-- helm v3.15.0+
-- kubectl v1.25.0+
+- **Ansible**: 2.9+ (will be installed automatically)
+- **Python**: 3.6+ (will be installed automatically)
+- **Git**: For cloning the repository
 
 ### Network Requirements
 
-- SSH access between installer machine and all cluster nodes
-- Internet connectivity for downloading packages
-- Open ports: 6443 (API server), 2379-2380 (etcd), 10250 (kubelet)
+- **Ports**: 6443, 2379-2380, 10250-10252, 10255, 30000-32767
+- **Firewall**: Must allow communication between all nodes
+- **DNS**: All nodes should be able to resolve each other's hostnames
 
 ---
 
@@ -57,8 +46,8 @@ Ansible-based installer for Smart Scaler components and Kubernetes cluster deplo
 
 ```bash
 # Clone the repository
-git clone https://github.com/smart-scaler/smartscaler-apps-installer.git
-cd smartscaler-apps-installer
+git clone https://github.com/smart-scaler/avesha-apps-installer.git
+cd avesha-apps-installer
 
 # Install Python3 
 sudo apt update
@@ -68,125 +57,82 @@ sudo apt-get install python3-venv python3-full -y
 python3 -m venv venv
 source venv/bin/activate
 
-# Install Python dependencies
-chmod +x files/install-requirements.sh
-./files/install-requirements.sh
-
-# Install Ansible collections
-LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 ansible-galaxy collection install -r requirements.yml --force
+# Install required packages
+pip install -r requirements.txt
 ```
 
-### Step 2.2: Generate SSH Keys
+### Step 2.2: Configure Inventory
+
+Edit the inventory file to match your cluster setup:
 
 ```bash
-# Generate SSH key for cluster access
-ssh-keygen -t rsa -b 4096 -f ~/.ssh/k8s_rsa -N ""
-
-# Copy SSH key to each node (repeat for all nodes)
-ssh-copy-id -i ~/.ssh/k8s_rsa.pub user@node-ip
+# Edit the inventory file
+nano inventory/hosts
 ```
 
-### Step 2.3: Configure user_input.yml
+Example inventory configuration:
 
-Edit `user_input.yml` with your cluster configuration:
+```ini
+[all]
+node1 ansible_host=192.168.1.10 ip=192.168.1.10
+node2 ansible_host=192.168.1.11 ip=192.168.1.11
+node3 ansible_host=192.168.1.12 ip=192.168.1.12
 
-This section defines the settings required to enable and configure a Kubernetes cluster deployment using Ansible.
+[kube_control_plane]
+node1
 
-#### 🔧 **Note**: Replace placeholders with actual values before running the playbook.
+[etcd]
+node1
 
-```yaml
-kubernetes_deployment:
-  enabled: true  # Enable Kubernetes deployment via Ansible
+[kube_node]
+node2
+node3
 
-  api_server:
-    host: "PUBLIC_IP"        # Public IP of Kubernetes API server
-    port: 6443               # Default secure port
-    secure: true             # Use HTTPS (recommended)
-
-  ssh_key_path: "/absolute/path/to/.ssh/k8s_rsa"     # SSH private key path
-  default_ansible_user: "REPLACE_SSH_USER"           # SSH user (e.g., ubuntu, ec2-user)
-  ansible_sudo_pass: ""                              # Optional: sudo password
-
-  control_plane_nodes:
-    - name: "master-1"
-      ansible_host: "PUBLIC_IP"       # Public IP for SSH
-      ansible_user: "REPLACE_SSH_USER"
-      ansible_become: true
-      ansible_become_method: "sudo"
-      ansible_become_user: "root"
-      private_ip: "PRIVATE_IP"        # Internal/private IP
-
+[calico_rr]
 ```
 
-#### ⚙️ For Single Node: Quick Configuration Update (Command-Line Shortcut)
+### Step 2.3: Configure Cluster Variables
 
-You can quickly update your `user_input.yml` by replacing only the **values** in this command based on your environment.
-**Keep the placeholder keywords (`PUBLIC_IP`, `PRIVATE_IP`, etc.) on the left side exactly as-is.**
-
-> ⚠️ **Warning:**
-> Replace **only** the values on the right-hand side (`192.168.1.100`, `root`, etc.) with your actual environment details.
-> **Do not modify** the placeholder keywords (`PUBLIC_IP`, `PRIVATE_IP`, etc.) — they are required for matching.
-
-#### 🧪 Example Command
+Edit the cluster configuration:
 
 ```bash
-sed -i \
-  -e 's|PUBLIC_IP|172.235.157.18|g' \
-  -e 's|PRIVATE_IP|172.235.157.18|g' \
-  -e 's|REPLACE_SSH_USER|root|g' \
-  -e 's|/absolute/path/to/.ssh/k8s_rsa|/root/.ssh/k8s_rsa|g' \
-  -e '/kubernetes_deployment:/,/^[[:space:]]*[^[:space:]]*enabled:/ s/enabled: false/enabled: true/' \
-  user_input.yml
+# Edit cluster configuration
+nano inventory/kubespray/k8s_cluster.yml
 ```
 
-> ✅ This command will:
->
-> * Replace `PUBLIC_IP` and `PRIVATE_IP` placeholders with your node IP
-> * Set the correct SSH user and key path
-> * Enable Kubernetes deployment by updating `enabled: false` → `enabled: true`
+Key configurations to verify:
+- `kube_version`: Kubernetes version
+- `cluster_name`: Your cluster name
+- `kube_network_plugin`: Network plugin (calico, flannel, etc.)
+- `kube_service_addresses`: Service CIDR
+- `kube_pods_subnet`: Pod CIDR
 
-#### 📌 Note:
-
-If you're deploying on a **single node** and running the command from the **same server**, you can use the **same IP address** for both `PUBLIC_IP` and `PRIVATE_IP`.
-
----
-
-### Step 2.4: Deploy Kubernetes Cluster
+### Step 2.4: Run Cluster Installation
 
 ```bash
-# Make the script executable
+# Make the setup script executable
 chmod +x setup_kubernetes.sh
 
 # Run the installation script with sudo
  ./setup_kubernetes.sh
 ```
 
-### Step 2.5 Change ownership of the smartscaler working directory
+### Step 2.5 Change ownership of the avesha-apps-installer working directory
 
 ```bash
 sudo chown $(whoami):$(whoami) -R .
 
 # Set the KUBECONFIG environment variable
-export KUBECONFIG=output/kubeconfig
+export KUBECONFIG=$(pwd)/inventory/artifacts/admin.conf
 
-# Verify cluster access and node status
+# Verify cluster is running
 kubectl get nodes
-```
-
-### Step 2.6: Verify Installation
-
-```bash
-# Check cluster status
-kubectl get nodes
-kubectl cluster-info
-
-# Verify all system pods are running
 kubectl get pods --all-namespaces
 ```
 
 ---
 
-## 3. Prerequisites for Installing SmartScaler Apps
+## 3. Prerequisites for EGS Installation
 
 ### Cluster Requirements
 
@@ -196,44 +142,76 @@ kubectl get pods --all-namespaces
 
 ### Required Environment Variables
 
-Set the following environment variables before deployment:
-
-```bash
-export AVESHA_DOCKER_USERNAME="your_avesha_username"
-export AVESHA_DOCKER_PASSWORD="your_avesha_password"
-```
+No additional environment variables are required for EGS installation.
 
 ### Configure user_input.yml
 
-**Important**: Set `kubernetes_deployment.enabled` to `false` in `user_input.yml` before running apps installation:
+**Important**: Set `kubernetes_deployment.enabled` to `false` in `user_input.yml` before running EGS installation:
 
 ```yaml
 kubernetes_deployment:
   enabled: false  # Must be false for apps-only deployment
-
-> ℹ️ **Required Kubeconfig Settings** – Already included above; this section can be skipped.
-
-global_control_plane_ip: "YOUR_MASTER_PUBLIC_IP"         # Provide the public IP for metallb/Nginx
-global_kubeconfig: "output/kubeconfig"                    # Required: Path to kubeconfig file
-global_kubecontext: "kubernetes-admin@cluster.local"     # Required: Kubernetes context
-use_global_context: true                                 # Required: Use global context
 ```
-#### Quick Configuration Update (Command-Line Shortcut)
 
-You can quickly replace the placeholder values in your `user_input.yml` configuration using the following `sed` command:
-
-#### 🧪 Example:
+You can also use this command to automatically set it:
 
 ```bash
 sed -i \
    -e '/kubernetes_deployment:/,/^[[:space:]]*[^[:space:]]*enabled:/ s/enabled: true/enabled: false/' \
   user_input.yml
 ```
+
 ---
 
-## 4. Instructions to Deploy SmartScaler Apps
+## 4. EGS License Setup
 
-### Step 4.1: Verify Prerequisites
+### Step 4.1: Generate Cluster Fingerprint
+
+The installer will automatically generate a cluster fingerprint required for EGS license generation:
+
+```bash
+# Run the deployment to generate cluster fingerprint
+ansible-playbook site.yml --tags "generate_cluster_fingerprint"
+```
+
+The cluster fingerprint will be saved to `output/cluster-fingerprint.txt`.
+
+### Step 4.2: Get EGS License
+
+1. **Visit EGS Registration Portal**: Go to [https://registration.kubeslice.io/](https://registration.kubeslice.io/)
+2. **Sign In**: Use your Avesha account credentials
+3. **Generate License**: 
+   - Navigate to "License Management" section
+   - Click "Generate New License"
+   - Paste the cluster fingerprint from `output/cluster-fingerprint.txt`
+   - Select your license type and duration
+   - Download the generated license file
+
+### Step 4.3: Place License File
+
+Place your downloaded license file in the designated folder:
+
+```bash
+# Copy your license file to the required location
+cp your-egs-license.yaml files/egs-license/egs-license.yaml
+```
+
+The license file should contain a Kubernetes Secret with the name `egs-license-file` in the `kubeslice-controller` namespace.
+
+### Step 4.4: License Validation
+
+The installer will automatically validate the license during deployment. The validation includes:
+- ✅ License file exists and is valid
+- ✅ License secret is created in the cluster
+- ✅ All required fields are present
+- ✅ License has not expired
+- ✅ License status is valid
+
+---
+
+## 5. Instructions to Deploy EGS Apps
+
+### Step 5.1: Verify Prerequisites
 
 ```bash
 # Verify cluster access
@@ -244,22 +222,18 @@ kubectl cluster-info
 kubectl version --client
 helm version
 
-# Verify environment variables
-echo $AVESHA_DOCKER_USERNAME
-echo $AVESHA_DOCKER_PASSWORD
+# Verify cluster is accessible
+kubectl get nodes
 ```
 
-### Step 4.2: Deploy Applications
+### Step 5.2: Deploy EGS Applications
 
 ```bash
-# Deploy with explicit credentials
- ansible-playbook site.yml \
-  -e "avesha_docker_username=$AVESHA_DOCKER_USERNAME" \
-  -e "avesha_docker_password=$AVESHA_DOCKER_PASSWORD" \
-  -vvvv
+# Deploy EGS applications
+ansible-playbook site.yml -vvvv
 ```
 
-### Step 4.3: Verify Deployment
+### Step 5.3: Verify EGS Deployment
 
 ```bash
 # Check all namespaces
@@ -267,20 +241,19 @@ kubectl get namespaces
 
 # Expected namespaces:
 # - gpu-operator
-# - keda
 # - monitoring
-# - nim
-# - nim-load-test
-# - smart-scaler
+# - kubeslice-controller
+# - kubeslice-system
 
-
-# Verify component status
+# Verify EGS component status
 kubectl get pods -n gpu-operator
 kubectl get pods -n monitoring
-kubectl get pods -n keda
-kubectl get pods -n nim
-kubectl get pods -n smart-scaler
-kubectl get pods -n nim-load-test
+kubectl get pods -n kubeslice-controller
+kubectl get pods -n kubeslice-system
+
+# Verify EGS license
+kubectl get secret egs-license-file -n kubeslice-controller
+kubectl describe secret egs-license-file -n kubeslice-controller
 ```
 
 Expected output:
@@ -292,6 +265,7 @@ gpu-operator-666bbffcd-drrwk                                  1/1     Running   
 gpu-operator-node-feature-discovery-gc-7c7f68d5f4-dz7jk       1/1     Running   0          96m
 gpu-operator-node-feature-discovery-master-58588c6967-8pjhc   1/1     Running   0          96m
 gpu-operator-node-feature-discovery-worker-xkbk2              1/1     Running   0          96m
+
 # Monitoring
 alertmanager-prometheus-kube-prometheus-alertmanager-0   2/2     Running   0          98m
 prometheus-grafana-67dc5c9fc9-5jzhh                      3/3     Running   0          98m
@@ -300,78 +274,50 @@ prometheus-kube-state-metrics-856b96f64d-7st5q           1/1     Running   0    
 prometheus-prometheus-kube-prometheus-prometheus-0       2/2     Running   0          98m
 prometheus-prometheus-node-exporter-nm8zl                1/1     Running   0          98m
 pushgateway-65497548cc-6v7sv                             1/1     Running   0          97m
-# Keda
-keda-admission-webhooks-7c6fc8d849-9cchf          1/1     Running   0             98m
-keda-operator-6465596cb9-4j54h                    1/1     Running   1 (98m ago)   98m
-keda-operator-metrics-apiserver-dc4dd6d79-gzxpq   1/1     Running   0             98m
 
-# AI/ML
-meta-llama3-8b-instruct-pod             1/1     Running   0          97m
-nim-k8s-nim-operator-7565b7477b-6d7rs   1/1     Running   0          98m
+# EGS Controller
+egs-controller-7c6fc8d849-9cchf                           1/1     Running   0          98m
+egs-ui-6465596cb9-4j54h                                   1/1     Running   0          98m
 
-# Smart Scaler
-smart-scaler-llm-inf-5f4bf754dd-6qbm9   1/1     Running   0          98m
-
-# Load Testing Service
-locust-load-54748fd47d-tndsr   1/1     Running   0          97m
+# EGS Worker
+egs-worker-dc4dd6d79-gzxpq                                1/1     Running   0          98m
 ```
 
-### Step 4.4: Accessing Prometheus & Grafana via NodePort
+### Step 5.4: Accessing EGS UI and Monitoring
 
-After deploying the application stack, Prometheus and Grafana can be accessed through the exposed NodePort services using your node’s IP address.
+After deploying the EGS application stack, you can access the management interfaces:
 
-### 🧾 Check Service Ports
-
-Run the following command to list the monitoring services:
+#### EGS UI Access
 
 ```bash
+# Get EGS UI service details
+kubectl get svc -n kubeslice-controller
+
+# Access EGS UI (replace with your node IP)
+kubectl port-forward -n kubeslice-controller svc/kubeslice-ui-proxy 8080:443
+```
+
+Then access the EGS UI at: [https://localhost:8080](https://localhost:8080)
+
+#### Monitoring Access
+
+```bash
+# Get monitoring service details
 kubectl get svc -n monitoring
+
+# Access Grafana (replace with your node IP)
+kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
+
+# Access Prometheus (replace with your node IP)
+kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
 ```
 
-### ✅ Sample Output
-
-```
-NAME                                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                         AGE
-alertmanager-operated                     ClusterIP   None            <none>        9093/TCP,9094/TCP,9094/UDP      3m21s
-prometheus-grafana                        NodePort    10.233.59.186   <none>        80:32321/TCP                    3m30s
-prometheus-kube-prometheus-alertmanager   ClusterIP   10.233.23.33    <none>        9093/TCP,8080/TCP               3m30s
-prometheus-kube-prometheus-operator       ClusterIP   10.233.49.28    <none>        443/TCP                         3m30s
-prometheus-kube-prometheus-prometheus     NodePort    10.233.38.213   <none>        9090:30090/TCP,8080:32020/TCP   3m30s
-prometheus-kube-state-metrics             ClusterIP   10.233.40.63    <none>        8080/TCP                        3m30s
-prometheus-operated                       ClusterIP   None            <none>        9090/TCP                        3m21s
-prometheus-prometheus-node-exporter       ClusterIP   10.233.55.211   <none>        9100/TCP                        3m30s
-pushgateway                               ClusterIP   10.233.42.8     <none>        9091/TCP                        104s
-```
-
-### 🌐 Access URLs
-
-Assuming your node IP is `192.168.100.10`:
-
-* **Grafana Dashboard**
-  🔗 [http://192.168.100.10:32321](http://192.168.100.10:32321)
-
-* **Prometheus UI**
-  🔗 [http://192.168.100.10:30090](http://192.168.100.10:30090)
-
-> ⚠️ **Note:**
->
-> * User and Password for Grafana UI is: admin/prom-operator
-> * NodePort values (like `32321` for Grafana and `30090` for Prometheus) **may change** as per your environment. Always verify with `kubectl get svc -n monitoring`.
-> * Ensure firewall rules or cloud security groups allow traffic to these NodePorts.
-
-* **Import NIM Dashboard**
-  
-   Import the following NIM Dashboard JSON in Grafana
-     https://github.com/smart-scaler/smartscaler-apps-installer/blob/main/files/grafana-dashboards/nim-dashboard.json
-  
-    **Note:** Customize to your environment and model, if needed.
-
-### Proceed to Test Run
-
-📖 **([Example Test Run Steps](#example-test-run-steps))**
+- **Grafana Dashboard**: [http://localhost:3000](http://localhost:3000) (admin/prom-operator)
+- **Prometheus UI**: [http://localhost:9090](http://localhost:9090)
 
 
 ---
+
 ## Documentation Links
 
 - **[User Input Configuration Guide](docs/USER_INPUT_CONFIGURATION.md)** - Complete user_input.yml guide
@@ -379,6 +325,7 @@ Assuming your node IP is `192.168.100.10`:
 - **[Kubernetes Configuration](docs/KUBERNETES_CONFIGURATION.md)** - Cluster setup details
 - **[Kubernetes Firewall Configuration](docs/KUBERNETES_FIREWALL.md)** - Network and firewall setup
 - **[NVIDIA Container Runtime Configuration](docs/NVIDIA_CONTAINER_RUNTIME.md)** - GPU runtime setup
+- **[EGS License Setup](docs/EGS-License-Setup.md)** - EGS license configuration guide
 
 ---
 
@@ -386,19 +333,22 @@ Assuming your node IP is `192.168.100.10`:
 
 ### Common Issues
 
-1. **SSH Connection Failed**
-   - Verify SSH keys are properly copied to all nodes
-   - Check SSH user permissions and sudo access
-
-2. **Cluster Deployment Failed**
+1. **Cluster Deployment Failed**
    - Check system requirements are met
    - Verify network connectivity between nodes
    - Review firewall settings
 
-3. **Apps Deployment Failed**
+2. **EGS Deployment Failed**
    - Ensure `kubernetes_deployment.enabled` is set to `false`
    - Verify all environment variables are set
    - Check cluster accessibility with `kubectl get nodes`
+   - Ensure EGS license is valid and applied
+
+3. **EGS License Issues**
+   - Verify license file exists in `files/egs-license/egs-license.yaml`
+   - Check license secret exists: `kubectl get secret egs-license-file -n kubeslice-controller`
+   - Verify license has not expired
+   - Ensure license contains all required fields
 
 4. **GPU Support Issues**
    - Verify NVIDIA drivers are installed on nodes
@@ -408,34 +358,45 @@ Assuming your node IP is `192.168.100.10`:
 ### Debug Commands
 
 ```bash
+# Check all pods status
+kubectl get pods --all-namespaces
 
-# Check specific namespace issues
-kubectl describe pods -n <namespace>
-kubectl logs -n <namespace> <pod-name>
+# Check EGS component logs
+kubectl logs -n kubeslice-controller deployment/egs-controller
+kubectl logs -n kubeslice-controller deployment/egs-ui
+kubectl logs -n kubeslice-system deployment/egs-worker
 
-# Verify cluster resources
+# Check infrastructure component logs
+kubectl logs -n gpu-operator deployment/gpu-operator
+kubectl logs -n monitoring deployment/prometheus-grafana
+kubectl logs -n monitoring deployment/prometheus-kube-prometheus-operator
+
+# Check EGS license status
+kubectl get secret egs-license-file -n kubeslice-controller -o yaml
+kubectl describe secret egs-license-file -n kubeslice-controller
+
+# Check service status
+kubectl get svc --all-namespaces
+
+# Check ingress status
+kubectl get ingress --all-namespaces
+
+# Check persistent volumes
+kubectl get pv
+kubectl get pvc --all-namespaces
+
+# Check node resources
 kubectl top nodes
-kubectl get events --all-namespaces
+kubectl describe nodes
+
+# Check GPU resources
+kubectl get nodes -o json | jq '.items[].status.allocatable | with_entries(select(.key | contains("nvidia")))'
+
+# Check events
+kubectl get events --all-namespaces --sort-by='.lastTimestamp'
 ```
 
 For additional support, please refer to the detailed documentation in the `docs/` folder or create an issue in the repository.
-
----
-## 🧾 EGS License Setup
-
-1. Complete the registration process at [Avesha EGS Registration](https://avesha.io/egs-registration) to receive the required access credentials
-
-2. After successful registration, Avesha will process your license request and send the **license YAML file** to your registered email address.
-
-3. Before applying the license, ensure that the **kubeslice-controller** namespace exists:
-```bash
-kubectl create namespace kubeslice-controller
-```
-5. Apply the license secret to your controller cluster:
-```bash
-kubectl apply -f egs-license.yaml
-```
-6. For detailed license setup instructions, refer to **[📋 EGS License Setup](docs/EGS-License-Setup.md)**.
 
 ---
 
@@ -457,51 +418,22 @@ The deployment process follows a specific execution order defined in `user_input
 - `gpu_operator_chart` - NVIDIA GPU operator installation
 - `prometheus_stack` - Prometheus monitoring stack
 - `pushgateway_manifest` - Prometheus Pushgateway
-- `keda_chart` - KEDA autoscaling
-- `nim_operator_chart` - NIM operator installation
-- `create_avesha_secret` - Avesha credentials setup
 
 #### AMD GPU Support (Alternative to NVIDIA)
 - `amd_gpu_operator_chart` - AMD GPU operator for AMD Instinct GPU accelerators
 - `amd_gpu_deviceconfig_manifest` - AMD GPU device configuration and settings
 
 #### EGS Installation
-- `kubeslice_controller_egs` - KubeSlice EGS controller for multi-cluster management
-- `kubeslice_ui_egs` - KubeSlice EGS management UI interface
+- `kubeslice_controller_egs_chart` - KubeSlice EGS controller for multi-cluster management
+- `kubeslice_ui_egs_chart` - KubeSlice EGS management UI interface
+- `kubeslice_worker_egs_chart` - KubeSlice EGS worker for cluster management
 - `egs_project_manifest` - EGS project configuration
 - `egs_cluster_registration_worker_1` - Register worker cluster
 - `fetch_worker_secret_worker_1` - Fetch worker authentication secrets
+- `generate_cluster_fingerprint` - Generate cluster fingerprint for license
+- `validate_and_apply_egs_license` - Validate and apply EGS license
 - `kubeslice_worker_egs_worker_1` - Install EGS worker components
 
-#### NIM 70B Components
-- `nim_cache_manifest_70b` - NIM cache for 70B model
-- `wait_for_nim_cache_70b` - Wait for cache initialization
-- `nim_cache_wait_job_70b` - Cache wait job
-- `nim_service_manifest_70b` - NIM service for 70B model
-- `keda_scaled_object_manifest_70b` - KEDA scaling configuration
-- `create_inference_pod_configmap_70b` - Inference configuration
-- `smart_scaler_inference_70b` - Smart Scaler setup
-- `create_locust_configmap_70b` - Load test configuration
-- `locust_manifest_70b` - Load testing setup
-- `smart_scaler_mcp_server_manifest` - MCP server configuration
-
-#### NIM 1B Components (Optional)
-- `nim_cache_manifest_1b` - NIM cache for 1B model
-- `nim_service_manifest_1b` - NIM service for 1B model
-- `keda_scaled_object_manifest_1b` - KEDA scaling configuration
-- `create_inference_pod_configmap_1b` - Inference configuration
-- `smart_scaler_inference_1b` - Smart Scaler setup
-- `create_locust_configmap_1b` - Load test configuration
-- `locust_manifest_1b` - Load testing setup
-
-#### NIM 8B Components (Optional)
-- `nim_cache_manifest_8b` - NIM cache for 8B model
-- `nim_service_manifest_8b` - NIM service for 8B model
-- `keda_scaled_object_manifest_8b` - KEDA scaling configuration
-- `create_inference_pod_configmap_8b` - Inference configuration
-- `smart_scaler_inference_8b` - Smart Scaler setup
-- `create_locust_configmap_8b` - Load test configuration
-- `locust_manifest_8b` - Load testing setup
 
 ### Controlling Execution
 
@@ -509,42 +441,32 @@ To execute specific components, use the `execution_order` variable with a list o
 
 ```bash
 # Execute only GPU operator and monitoring stack
-sudo ansible-playbook site.yml \
+ansible-playbook site.yml \
   --extra-vars "execution_order=['gpu_operator_chart','prometheus_stack']" \
-  -e "avesha_docker_username=$AVESHA_DOCKER_USERNAME" \
-  -e "avesha_docker_password=$AVESHA_DOCKER_PASSWORD" \
+  -vv
+
+# Execute EGS installation with license setup
+ansible-playbook site.yml \
+  --extra-vars "execution_order=['generate_cluster_fingerprint','validate_and_apply_egs_license','kubeslice_controller_egs_chart','kubeslice_ui_egs_chart']" \
   -vv
 
 # Execute AMD GPU operator setup (alternative to NVIDIA)
-sudo ansible-playbook site.yml \
+ansible-playbook site.yml \
   --extra-vars "execution_order=['cert_manager','amd_gpu_operator_chart','amd_gpu_deviceconfig_manifest']" \
-  -e "avesha_docker_username=$AVESHA_DOCKER_USERNAME" \
-  -e "avesha_docker_password=$AVESHA_DOCKER_PASSWORD" \
   -vv
 
-# Execute EGS installation
-sudo ansible-playbook site.yml \
-  --extra-vars "execution_order=['cert_manager','kubeslice_controller_egs','kubeslice_ui_egs','egs_project_manifest','egs_cluster_registration_worker_1','fetch_worker_secret_worker_1','kubeslice_worker_egs_worker_1']" \
-  -e "avesha_docker_username=$AVESHA_DOCKER_USERNAME" \
-  -e "avesha_docker_password=$AVESHA_DOCKER_PASSWORD" \
+# Execute complete EGS installation
+ansible-playbook site.yml \
+  --extra-vars "execution_order=['generate_cluster_fingerprint','validate_and_apply_egs_license','kubeslice_controller_egs_chart','kubeslice_ui_egs_chart','kubeslice_worker_egs_chart','egs_project_manifest','egs_cluster_registration_worker_1','fetch_worker_secret_worker_1']" \
   -vv
 
 # Execute only NGINX ingress setup
-sudo ansible-playbook site.yml \
+ansible-playbook site.yml \
   --extra-vars "execution_order=['nginx_ingress_config','nginx_ingress_chart']" \
-  -e "avesha_docker_username=$AVESHA_DOCKER_USERNAME" \
-  -e "avesha_docker_password=$AVESHA_DOCKER_PASSWORD" \
-  -vv
-
-# Execute all NIM 70B components
-sudo ansible-playbook site.yml \
-  --extra-vars "execution_order=['nim_cache_manifest_70b','wait_for_nim_cache_70b','nim_cache_wait_job_70b','nim_service_manifest_70b','keda_scaled_object_manifest_70b','create_inference_pod_configmap_70b','smart_scaler_inference_70b','create_locust_configmap_70b','locust_manifest_70b']" \
-  -e "avesha_docker_username=$AVESHA_DOCKER_USERNAME" \
-  -e "avesha_docker_password=$AVESHA_DOCKER_PASSWORD" \
   -vv
 ```
 
-> 💡 **Tip**: Components are executed in the order they appear in the list. Make sure to list dependent components in the correct order and include all required credentials.
+> 💡 **Tip**: Components are executed in the order they appear in the list. Make sure to list dependent components in the correct order.
 
 ---
 
@@ -563,110 +485,18 @@ This command will:
 
 > ⚠️ **Warning**: This action is irreversible. Make sure to backup any important data before proceeding with the cluster destruction.
 
-# Example Test Run Steps
+---
 
-Each test run can include multiple cycles, with each cycle typically lasting around 1 hour. Running multiple cycles helps in evaluating consistency and observing Smart Scaler's behavior over time.
+## Support and Contributing
 
-## 🔄 Starting (restarting) a Test Run
+For support, questions, or contributions to the Avesha Apps Installer:
 
-Follow these steps to (re)start a clean test cycle:
+- **Documentation**: Check the `docs/` folder for detailed guides
+- **Issues**: Report issues on the GitHub repository
+- **License**: See the EGS license setup guide for licensing information
 
-### Scale Down LLM and Load Generator Pods
+---
 
-Scale the Locust deployment replicas to 0:
+## License
 
-```bash
-kubectl scale deployment locust-load-70b --replicas=0  -n nim-load-test
-```
-
-Scale the NIM LLM deployment replicas to 1:
-
-```bash
-kubectl scale deployment meta-llama3-70b-instruct --replicas=1 -n nim
-```
-
-
-### Verify Smart Scaler and HPA Settings
-
-Ensure the HorizontalPodAutoscaler (HPA)replica is also set to 1:
-
-```bash
-kubectl get hpa -n nim
-```
-
-### Wait for Stabilization
-
-Wait for some time (5-20 minutes) to allow both Smart Scaler and HPA to fully scale down and stabilize at 1 replica.
-
-```bash
-kubectl get hpa -n nim
-```
-
-Ensure the HorizontalPodAutoscaler (HPA)replica is also set to 1:
-
-## Smart Scaler/HPA configuration, verify configuration
-
-### Smart Scaler 
-
-**Note:** 
-  - verify and edit scaledobject, if needed (Typically you would need to edit this if you are switching from HPA to Smart Scaler)
-
-Edit ScaledObject resource
-
-```bash
-kubectl edit scaledobjects llm-demo-keda-70b -n nim
-```
-
-Set `spec.metadata` fields with the following data
-
-```yaml
-- metadata:
-    metricName: smartscaler_hpa_num_pods
-    query: smartscaler_hpa_num_pods{ss_app_name="nim-llama",ss_deployment_name="meta-llama3-8b-instruct",job="pushgateway",ss_app_version="1.0", ss_cluster_name="nim-llama", ss_namespace="nim", ss_tenant_name="tenant-b200-local"}
-    serverAddress: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
-    threshold: "1"
-```
-
-Check and reset the `spec.maxReplicaCount` to 8
-
-### For HPA setup
-
-**Note:** 
-  - verify and edit scaledobject, if needed (Typically you would need to edit this if you are switching from Smart Scaler to HPA)
-
-Edit ScaledObject resource
-
-```bash
-kubectl edit scaledobjects llm-demo-keda-70b -n nim
-```
-
-Set `spec.metadata` fields with the following data
-
-**Note:** threshold value will be different for different models and GPUs, based on the PSE values.
-- For B200: llama3.1 70b, threshold:80
-- For B200: llama3.1 8b, threshold:200 
-
-```yaml
-- metadata:
-    metricName: smartscaler_hpa_num_pods
-    query: sum(num_requests_running) + sum(num_requests_waiting)
-    serverAddress: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
-    threshold: "80"
-```
-Check to make sure current replicas set to 1 and model pod is running and ready
-
-```bash
-kubectl get hpa -n nim
-kubectl get pods -n nim
-```
-### Restart Load Generation
-
-Scale the Locust replicas up to 1 to initiate the next test cycle:
-
-```bash
-kubectl scale deployment locust-load-70b -n nim-load-test --replicas=1
-```
-
-### Monitor the Test
-
-Observe metrics and scaling behavior using the NIM Dashboard.
+This project is part of the Avesha EGS (Enterprise Gateway Service) ecosystem. Please refer to the EGS license terms and conditions for usage rights and restrictions.
