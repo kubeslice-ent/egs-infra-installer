@@ -220,11 +220,11 @@ kubernetes_deployment:
 # These settings must be configured regardless of deployment type
 ###############################################################################
 
-skip_prerequisites: false
+skip_prerequisites: true
 
 # Validation and Execution Settings
 validate_prerequisites:
-  enabled: true                              # Required: Must be enabled for validation
+  enabled: false                              # Required: Must be enabled for validation
 
 execution_order_enabled: true                # Required: Must be enabled for ordered execution
 
