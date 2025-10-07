@@ -1,4 +1,4 @@
 ---
-# NGC API credentials
-ngc_docker_api_key: ""  # Your NGC Docker API key
-ngc_api_key: ""        # Your NGC API key 
+# Avesha Docker Registry credentials
+avesha_docker_username: ""  # Your Avesha Docker username
+avesha_docker_password: ""  # Your Avesha Docker password 

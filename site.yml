@@ -37,13 +37,6 @@
       when: vault_file.stat.exists
       ignore_errors: true
 
-    - name: Set NGC API key
-      set_fact:
-        ngc_api_key: "{{ ngc_api_key | default(lookup('env', 'NGC_API_KEY')) | default(vault_ngc_api_key | default('not-set')) }}"
-
-    - name: Set NGC Docker API key
-      set_fact:
-        ngc_docker_api_key: "{{ ngc_docker_api_key | default(lookup('env', 'NGC_DOCKER_API_KEY')) | default(vault_ngc_docker_api_key | default('not-set')) }}"
 
     - name: Set Avesha Docker username
       set_fact:
@@ -56,14 +49,11 @@
     - name: Debug variable values
       debug:
         msg: |
-          NGC API Key: {{ 'set' if ngc_api_key and ngc_api_key != 'not-set' else 'not set' }}
-          NGC Docker API Key: {{ 'set' if ngc_docker_api_key and ngc_docker_api_key != 'not-set' else 'not set' }}
           Avesha Docker Username: {{ 'set' if avesha_docker_username and avesha_docker_username != 'not-set' else 'not set' }}
           Avesha Docker Password: {{ 'set' if avesha_docker_password and avesha_docker_password != 'not-set' else 'not set' }}
 
     - name: Determine which credentials are needed based on execution order
       set_fact:
-        needs_ngc_credentials: "{{ 'create_ngc_secrets' in execution_order or 'verify_ngc_secrets' in execution_order }}"
         needs_avesha_credentials: "{{ 'create_avesha_secret' in execution_order }}"
         missing_credentials: []
 
@@ -71,23 +61,9 @@
       debug:
         msg: |
           Credential requirements based on execution order:
-          - NGC credentials needed: {{ needs_ngc_credentials }}
           - Avesha credentials needed: {{ needs_avesha_credentials }}
           - Execution order: {{ execution_order }}
 
-    - name: Check NGC API key (only if needed)
-      set_fact:
-        missing_credentials: "{{ missing_credentials + ['NGC_API_KEY'] }}"
-      when: 
-        - needs_ngc_credentials | default(false)
-        - (not ngc_api_key or ngc_api_key == 'not-set')
-
-    - name: Check NGC Docker API key (only if needed)
-      set_fact:
-        missing_credentials: "{{ missing_credentials + ['NGC_DOCKER_API_KEY'] }}"
-      when: 
-        - needs_ngc_credentials | default(false)
-        - (not ngc_docker_api_key or ngc_docker_api_key == 'not-set')
 
     - name: Check Avesha Docker username (only if needed)
       set_fact:
@@ -112,9 +88,6 @@
           {% endfor %}
           
           Components requiring these credentials:
-          {% if needs_ngc_credentials | default(false) %}
-          - create_ngc_secrets, verify_ngc_secrets (NGC credentials)
-          {% endif %}
           {% if needs_avesha_credentials | default(false) %}
           - create_avesha_secret (Avesha credentials)
           {% endif %}
@@ -130,13 +103,7 @@
     - name: Show credential source
       debug:
         msg: >-
-          Using NGC credentials from: 
-          {%- if ngc_api_key == lookup('env', 'NGC_API_KEY') %} environment variables
-          {%- elif ngc_api_key == 'not-set' %} not configured (will use defaults)
-          {%- else %} command line arguments or vault
-          {%- endif %}
-          
-          Using Avesha Systems credentials from:
+          Using Avesha Systems credentials from: 
           {%- if avesha_docker_username == lookup('env', 'AVESHA_DOCKER_USERNAME') %} environment variables
           {%- elif avesha_docker_username == 'not-set' %} not configured (will use defaults)
           {%- else %} command line arguments or vault
@@ -155,8 +122,6 @@
       include_tasks: "tasks/process_execution_order.yml"
       vars:
         execution_vars:
-          ngc_api_key: "{{ ngc_api_key }}"
-          ngc_docker_api_key: "{{ ngc_docker_api_key }}"
           avesha_docker_username: "{{ avesha_docker_username }}"
           avesha_docker_password: "{{ avesha_docker_password }}"
       when: execution_order_enabled | default(true)

@@ -108,18 +108,12 @@ readd_helm_repos: true                        # Re-add Helm repos even if they e
 ## Environment Variables
 
 ```yaml
-# NGC credentials (for NVIDIA components)
-ngc_api_key: "{{ lookup('env', 'NGC_API_KEY') }}"
-ngc_docker_api_key: "{{ lookup('env', 'NGC_DOCKER_API_KEY') }}"
-
 # Avesha credentials (for Smart Scaler components)
 avesha_docker_username: "{{ lookup('env', 'AVESHA_DOCKER_USERNAME') }}"
 avesha_docker_password: "{{ lookup('env', 'AVESHA_DOCKER_PASSWORD') }}"
 ```
 
 Required environment variables:
-- `NGC_API_KEY`: NVIDIA NGC API key
-- `NGC_DOCKER_API_KEY`: NVIDIA Docker registry API key
 - `AVESHA_DOCKER_USERNAME`: Avesha Docker registry username
 - `AVESHA_DOCKER_PASSWORD`: Avesha Docker registry password
 
@@ -140,8 +134,6 @@ execution_order:
   - pushgateway_manifest              # Deploy Pushgateway for custom metrics
   - keda_chart                        # Install KEDA for autoscaling
   - nim_operator_chart                # Deploy NIM Operator
-  - create_ngc_secrets                # Create NGC secrets for NVIDIA registry
-  - verify_ngc_secrets                # Verify NGC secret creation
   - create_avesha_secret              # Create Avesha Docker registry secrets
   - nim_cache_manifest                # Deploy NIM Cache for model preparation
   - nim_service_manifest              # Deploy NIM Service for inference
@@ -450,44 +442,6 @@ locust_manifest:
 
 ## Command Execution
 
-### NGC Secret Management
-
-```yaml
-- name: "create_ngc_secrets"
-  kubeconfig: "{{ kubeconfig | default(global_kubeconfig) }}"
-  kubecontext: "{{ kubecontext | default(global_kubecontext) }}"
-  commands:
-    - cmd: |
-        kubectl create secret docker-registry ngc-secret \
-          --docker-server=nvcr.io \
-          --docker-username='$oauthtoken' \
-          --docker-password="${NGC_DOCKER_API_KEY}" \
-          --docker-email='your.email@solo.io' \
-          -n nim
-      env:
-        NGC_DOCKER_API_KEY: "{{ ngc_docker_api_key }}"
-        KUBECONFIG: "{{ kubeconfig | default(global_kubeconfig) }}"
-    
-    - cmd: |
-        kubectl create secret generic ngc-api-secret -n nim \
-          --from-literal=NGC_API_KEY="${NGC_API_KEY}"
-      env:
-        NGC_API_KEY: "{{ ngc_api_key }}"
-        KUBECONFIG: "{{ kubeconfig | default(global_kubeconfig) }}"
-
-- name: "verify_ngc_secrets"
-  commands:
-    - cmd: "kubectl get secret ngc-secret -n nim -o jsonpath={.metadata.name}"
-      env:
-        KUBECONFIG: "{{ global_kubeconfig }}"
-        KUBECONTEXT: "{{ global_kubecontext }}"
-      ignore_errors: true
-    - cmd: "kubectl get secret ngc-api-secret -n nim -o jsonpath={.metadata.name}"
-      env:
-        KUBECONFIG: "{{ global_kubeconfig }}"
-        KUBECONTEXT: "{{ global_kubecontext }}"
-      ignore_errors: true
-```
 
 ### Avesha Secret Management
 

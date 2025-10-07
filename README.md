@@ -199,8 +199,6 @@ kubectl get pods --all-namespaces
 Set the following environment variables before deployment:
 
 ```bash
-export NGC_API_KEY="your_ngc_api_key"
-export NGC_DOCKER_API_KEY="your_ngc_docker_api_key"
 export AVESHA_DOCKER_USERNAME="your_avesha_username"
 export AVESHA_DOCKER_PASSWORD="your_avesha_password"
 ```
@@ -247,8 +245,6 @@ kubectl version --client
 helm version
 
 # Verify environment variables
-echo $NGC_API_KEY
-echo $NGC_DOCKER_API_KEY
 echo $AVESHA_DOCKER_USERNAME
 echo $AVESHA_DOCKER_PASSWORD
 ```
@@ -258,8 +254,6 @@ echo $AVESHA_DOCKER_PASSWORD
 ```bash
 # Deploy with explicit credentials
  ansible-playbook site.yml \
-  -e "ngc_api_key=$NGC_API_KEY" \
-  -e "ngc_docker_api_key=$NGC_DOCKER_API_KEY" \
   -e "avesha_docker_username=$AVESHA_DOCKER_USERNAME" \
   -e "avesha_docker_password=$AVESHA_DOCKER_PASSWORD" \
   -vvvv
@@ -465,8 +459,6 @@ The deployment process follows a specific execution order defined in `user_input
 - `pushgateway_manifest` - Prometheus Pushgateway
 - `keda_chart` - KEDA autoscaling
 - `nim_operator_chart` - NIM operator installation
-- `create_ngc_secrets` - NGC credentials setup
-- `verify_ngc_secrets` - NGC credentials verification
 - `create_avesha_secret` - Avesha credentials setup
 
 #### AMD GPU Support (Alternative to NVIDIA)
@@ -519,8 +511,6 @@ To execute specific components, use the `execution_order` variable with a list o
 # Execute only GPU operator and monitoring stack
 sudo ansible-playbook site.yml \
   --extra-vars "execution_order=['gpu_operator_chart','prometheus_stack']" \
-  -e "ngc_api_key=$NGC_API_KEY" \
-  -e "ngc_docker_api_key=$NGC_DOCKER_API_KEY" \
   -e "avesha_docker_username=$AVESHA_DOCKER_USERNAME" \
   -e "avesha_docker_password=$AVESHA_DOCKER_PASSWORD" \
   -vv
@@ -528,8 +518,6 @@ sudo ansible-playbook site.yml \
 # Execute AMD GPU operator setup (alternative to NVIDIA)
 sudo ansible-playbook site.yml \
   --extra-vars "execution_order=['cert_manager','amd_gpu_operator_chart','amd_gpu_deviceconfig_manifest']" \
-  -e "ngc_api_key=$NGC_API_KEY" \
-  -e "ngc_docker_api_key=$NGC_DOCKER_API_KEY" \
   -e "avesha_docker_username=$AVESHA_DOCKER_USERNAME" \
   -e "avesha_docker_password=$AVESHA_DOCKER_PASSWORD" \
   -vv
@@ -537,8 +525,6 @@ sudo ansible-playbook site.yml \
 # Execute EGS installation
 sudo ansible-playbook site.yml \
   --extra-vars "execution_order=['cert_manager','kubeslice_controller_egs','kubeslice_ui_egs','egs_project_manifest','egs_cluster_registration_worker_1','fetch_worker_secret_worker_1','kubeslice_worker_egs_worker_1']" \
-  -e "ngc_api_key=$NGC_API_KEY" \
-  -e "ngc_docker_api_key=$NGC_DOCKER_API_KEY" \
   -e "avesha_docker_username=$AVESHA_DOCKER_USERNAME" \
   -e "avesha_docker_password=$AVESHA_DOCKER_PASSWORD" \
   -vv
@@ -546,8 +532,6 @@ sudo ansible-playbook site.yml \
 # Execute only NGINX ingress setup
 sudo ansible-playbook site.yml \
   --extra-vars "execution_order=['nginx_ingress_config','nginx_ingress_chart']" \
-  -e "ngc_api_key=$NGC_API_KEY" \
-  -e "ngc_docker_api_key=$NGC_DOCKER_API_KEY" \
   -e "avesha_docker_username=$AVESHA_DOCKER_USERNAME" \
   -e "avesha_docker_password=$AVESHA_DOCKER_PASSWORD" \
   -vv
@@ -555,8 +539,6 @@ sudo ansible-playbook site.yml \
 # Execute all NIM 70B components
 sudo ansible-playbook site.yml \
   --extra-vars "execution_order=['nim_cache_manifest_70b','wait_for_nim_cache_70b','nim_cache_wait_job_70b','nim_service_manifest_70b','keda_scaled_object_manifest_70b','create_inference_pod_configmap_70b','smart_scaler_inference_70b','create_locust_configmap_70b','locust_manifest_70b']" \
-  -e "ngc_api_key=$NGC_API_KEY" \
-  -e "ngc_docker_api_key=$NGC_DOCKER_API_KEY" \
   -e "avesha_docker_username=$AVESHA_DOCKER_USERNAME" \
   -e "avesha_docker_password=$AVESHA_DOCKER_PASSWORD" \
   -vv

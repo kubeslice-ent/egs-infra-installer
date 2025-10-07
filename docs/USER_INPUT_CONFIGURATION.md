@@ -57,8 +57,6 @@ global_repo_password: ""
 readd_helm_repos: true
 
 # Environment Variables
-ngc_api_key: "{{ lookup('env', 'NGC_API_KEY') }}"
-ngc_docker_api_key: "{{ lookup('env', 'NGC_DOCKER_API_KEY') }}"
 avesha_docker_username: "{{ lookup('env', 'AVESHA_DOCKER_USERNAME') }}"
 avesha_docker_password: "{{ lookup('env', 'AVESHA_DOCKER_PASSWORD') }}"
 
@@ -74,8 +72,6 @@ execution_order:
   - pushgateway_manifest              # Deploy Pushgateway for custom metrics
   - keda_chart                        # Install KEDA for autoscaling
   - nim_operator_chart                # Deploy NIM Operator
-  - create_ngc_secrets                # Create NGC secrets for NVIDIA registry
-  - verify_ngc_secrets                # Verify NGC secret creation
   - create_avesha_secret              # Create Avesha Docker registry secrets
   - nim_cache_manifest                # Deploy NIM Cache for model preparation
   - nim_service_manifest              # Deploy NIM Service for inference
@@ -329,22 +325,6 @@ locust_manifest:
 
 The command execution section handles secret management and ConfigMap creation:
 
-#### NGC Secret Management
-```yaml
-- name: "create_ngc_secrets"
-  kubeconfig: "{{ kubeconfig | default(global_kubeconfig) }}"
-  kubecontext: "{{ kubecontext | default(global_kubecontext) }}"
-  commands:
-    - cmd: |
-        kubectl create secret docker-registry ngc-secret \
-          --docker-server=nvcr.io \
-          --docker-username='$oauthtoken' \
-          --docker-password="${NGC_DOCKER_API_KEY}" \
-          --docker-email='your.email@solo.io' \
-          -n nim
-      env:
-        NGC_DOCKER_API_KEY: "{{ ngc_docker_api_key }}"
-```
 
 #### Avesha Secret Management
 ```yaml
@@ -398,8 +378,6 @@ execution_order:
   - pushgateway_manifest
   - keda_chart
   - nim_operator_chart
-  - create_ngc_secrets
-  - verify_ngc_secrets
   - create_avesha_secret
   - nim_cache_manifest
   - nim_service_manifest
@@ -429,8 +407,6 @@ For AI/ML components without Smart Scaler:
 ```yaml
 execution_order:
   - nim_operator_chart
-  - create_ngc_secrets
-  - verify_ngc_secrets
   - nim_cache_manifest
   - nim_service_manifest
 ```
@@ -440,10 +416,6 @@ execution_order:
 The following environment variables must be set before deployment:
 
 ```bash
-# NGC API Credentials (Required for NVIDIA components)
-export NGC_API_KEY="your-ngc-api-key"
-export NGC_DOCKER_API_KEY="your-ngc-docker-api-key"
-
 # Avesha Systems Docker Registry Credentials (Required for Smart Scaler)
 export AVESHA_DOCKER_USERNAME="your-avesha-username"
 export AVESHA_DOCKER_PASSWORD="your-avesha-password"

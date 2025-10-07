@@ -245,8 +245,6 @@ readd_helm_repos: true                       # Required: Re-add Helm repos
 # Required Credentials
 # These will use environment variables if available, otherwise fall back to 'not-set'
 # You can override these values directly in this file or use environment variables
-ngc_api_key: "{{ lookup('env', 'NGC_API_KEY') | default('not-set') }}"              # Required for NGC access
-ngc_docker_api_key: "{{ lookup('env', 'NGC_DOCKER_API_KEY') | default('not-set') }}" # Required for NGC Docker registry
 avesha_docker_username: "{{ lookup('env', 'AVESHA_DOCKER_USERNAME') | default('not-set') }}" # Required for Avesha images
 avesha_docker_password: "{{ lookup('env', 'AVESHA_DOCKER_PASSWORD') | default('not-set') }}" # Required for Avesha images
 
@@ -264,8 +262,8 @@ execution_order:
   # Base Applications
   - gpu_operator_chart
   - prometheus_stack
-  - pushgateway_manifest
-  - create_avesha_secret
+  - generate_cluster_fingerprint  # Generate cluster fingerprint for EGS license
+  - validate_and_apply_egs_license  # Validate and apply EGS license before EGS installation
 
   # AMD GPU Support
   # - amd_gpu_operator_chart         # Install AMD GPU operator for AMD GPU support,enable cert-manager as well from above section.
@@ -918,47 +916,23 @@ manifests:
 
 command_exec:
 
-  - name: "create_avesha_secret"
+  - name: "generate_cluster_fingerprint"
     kubeconfig: "{{ kubeconfig | default(global_kubeconfig) }}"
     kubecontext: "{{ kubecontext | default(global_kubecontext) }}"
     commands:
-      - cmd: |
-          # First check and create namespace if it doesn't exist
-          if ! kubectl --kubeconfig={{ kubeconfig | default(global_kubeconfig) }} \
-            --context={{ kubecontext | default(global_kubecontext) }} \
-            get namespace smart-scaler >/dev/null 2>&1; then
-            echo "Creating namespace smart-scaler..."
-            kubectl --kubeconfig={{ kubeconfig | default(global_kubeconfig) }} \
-              --context={{ kubecontext | default(global_kubecontext) }} \
-              create namespace smart-scaler
-          fi
-
-          # Then handle the secret
-          if kubectl --kubeconfig={{ kubeconfig | default(global_kubeconfig) }} \
-            --context={{ kubecontext | default(global_kubecontext) }} \
-            -n smart-scaler get secret avesha-systems >/dev/null 2>&1; then
-            echo "Secret avesha-systems exists, replacing..."
-            kubectl --kubeconfig={{ kubeconfig | default(global_kubeconfig) }} \
-              --context={{ kubecontext | default(global_kubecontext) }} \
-              -n smart-scaler delete secret avesha-systems
-          fi
-          kubectl --kubeconfig={{ kubeconfig | default(global_kubeconfig) }} \
-            --context={{ kubecontext | default(global_kubecontext) }} \
-            -n smart-scaler create secret docker-registry avesha-systems \
-            --docker-username="${AVESHA_DOCKER_USERNAME}" \
-            --docker-password="${AVESHA_DOCKER_PASSWORD}"
+      - cmd: "bash {{ playbook_dir }}/files/generate-cluster-fingerprint.sh"
         env:
-          AVESHA_DOCKER_USERNAME: "{{ avesha_docker_username }}"
-          AVESHA_DOCKER_PASSWORD: "{{ avesha_docker_password }}"
           KUBECONFIG: "{{ kubeconfig | default(global_kubeconfig) }}"
+          KUBECONTEXT: "{{ kubecontext | default(global_kubecontext) }}"
 
-  - name: "verify_avesha_secret"
+  - name: "validate_and_apply_egs_license"
+    kubeconfig: "{{ kubeconfig | default(global_kubeconfig) }}"
+    kubecontext: "{{ kubecontext | default(global_kubecontext) }}"
     commands:
-      - cmd: "kubectl get secret avesha-systems -n smart-scaler -o jsonpath={.metadata.name} --kubeconfig={{ global_kubeconfig }} --context={{ global_kubecontext }}"
+      - cmd: "bash {{ playbook_dir }}/files/validate-and-apply-egs-license.sh"
         env:
-          KUBECONFIG: "{{ global_kubeconfig }}"
-          KUBECONTEXT: "{{ global_kubecontext }}"
-        ignore_errors: true
+          KUBECONFIG: "{{ kubeconfig | default(global_kubeconfig) }}"
+          KUBECONTEXT: "{{ kubecontext | default(global_kubecontext) }}"
 
   - name: "fetch_worker_secret_worker_1"
     kubeconfig: "{{ kubeconfig | default(global_kubeconfig) }}"

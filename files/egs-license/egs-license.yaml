@@ -1,0 +1,3 @@
+# EGS License File
+# Place your EGS license YAML content here
+# The file should contain a Secret with name 'egs-license-file' in 'kubeslice-controller' namespace

@@ -192,17 +192,20 @@
   when: 
     - kubernetes_deployment is defined
     - kubernetes_deployment.enabled | bool
+    - execution_order is defined
+    - execution_order | difference(['generate_cluster_fingerprint']) | length > 0
   delegate_to: localhost
 
 - name: Validate kubernetes deployment settings
   assert:
     that:
       - kubernetes_deployment is defined
-      - not kubernetes_deployment.enabled
+      - not kubernetes_deployment.enabled or execution_order | difference(['generate_cluster_fingerprint']) | length == 0
     fail_msg: |
       Error: Invalid kubernetes deployment configuration.
       - kubernetes_deployment must be defined in user_input.yml
       - kubernetes_deployment.enabled must be set to false to install applications
+      - Only 'generate_cluster_fingerprint' is allowed when kubernetes_deployment.enabled is true
     success_msg: "Kubernetes deployment check passed - applications can be installed"
 
 - name: Check if helm diff plugin is already installed
@@ -248,24 +251,10 @@
 
 - name: Determine which credentials are needed based on execution order
   set_fact:
-    needs_ngc_credentials: "{{ 'create_ngc_secrets' in execution_order or 'verify_ngc_secrets' in execution_order }}"
     needs_avesha_credentials: "{{ 'create_avesha_secret' in execution_order }}"
     missing_credentials: []
 
 
-- name: Check NGC API key (only if needed)
-  set_fact:
-    missing_credentials: "{{ missing_credentials + ['NGC_API_KEY'] }}"
-  when: 
-    - needs_ngc_credentials | default(false)
-    - (not ngc_api_key or ngc_api_key == 'not-set')
-
-- name: Check NGC Docker API key (only if needed)
-  set_fact:
-    missing_credentials: "{{ missing_credentials + ['NGC_DOCKER_API_KEY'] }}"
-  when: 
-    - needs_ngc_credentials | default(false)
-    - (not ngc_docker_api_key or ngc_docker_api_key == 'not-set')
 
 - name: Check Avesha Docker username (only if needed)
   set_fact:
@@ -290,9 +279,6 @@
       {% endfor %}
       
       Components requiring these credentials:
-      {% if needs_ngc_credentials | default(false) %}
-      - create_ngc_secrets, verify_ngc_secrets (NGC credentials)
-      {% endif %}
       {% if needs_avesha_credentials | default(false) %}
       - create_avesha_secret (Avesha credentials)
       {% endif %}
@@ -341,6 +327,8 @@
       when: 
         - kubernetes_deployment is defined
         - kubernetes_deployment.enabled | bool
+        - execution_order is defined
+        - execution_order | difference(['generate_cluster_fingerprint']) | length > 0
 
     - name: Check Kubernetes cluster access
       shell: KUBECONFIG={{ global_kubeconfig }} kubectl --context {{ global_kubecontext }} cluster-info
