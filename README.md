@@ -209,6 +209,18 @@ sed -i \
 
 > ⚠️ **Important**: License setup must be completed BEFORE installing any EGS components. The cluster fingerprint generation and license application are prerequisites for all EGS installations.
 
+### Step 4.0: Label Cluster Nodes
+
+Before setting up the EGS license, all nodes in the cluster must be labeled with `kubeslice.io/node-type=gateway`. This is automatically handled by the installer, but you can also run it manually:
+
+```bash
+# Label all nodes with kubeslice.io/node-type=gateway
+kubectl get nodes -o name | xargs -I {} kubectl label {} kubeslice.io/node-type=gateway --overwrite
+
+# Verify the labels
+kubectl get nodes -l kubeslice.io/node-type=gateway
+```
+
 ### Step 4.1: Generate Cluster Fingerprint
 
 Generate the cluster fingerprint required for EGS license generation:
@@ -470,7 +482,8 @@ The deployment process follows a specific execution order defined in `user_input
 - `amd_gpu_deviceconfig_manifest` - AMD GPU device configuration and settings
 
 #### EGS Installation
-- `validate_and_apply_egs_license` - Validate and apply EGS license (REQUIRED FIRST)
+- `label_nodes_gateway` - Label all nodes with kubeslice.io/node-type=gateway (REQUIRED FIRST)
+- `validate_and_apply_egs_license` - Validate and apply EGS license (REQUIRED SECOND)
 - `kubeslice_controller_egs_chart` - KubeSlice EGS controller for multi-cluster management
 - `kubeslice_ui_egs_chart` - KubeSlice EGS management UI interface
 - `kubeslice_worker_egs_chart` - KubeSlice EGS worker for cluster management
@@ -490,14 +503,14 @@ ansible-playbook site.yml \
   --extra-vars "execution_order=['gpu_operator_chart','prometheus_stack']" \
   -vv
 
-# Execute EGS license validation (after manual license setup)
+# Execute node labeling and EGS license validation
 ansible-playbook site.yml \
-  --extra-vars "execution_order=['validate_and_apply_egs_license']" \
+  --extra-vars "execution_order=['label_nodes_gateway','validate_and_apply_egs_license']" \
   -vv
 
-# Execute EGS installation with license validation
+# Execute EGS installation with node labeling and license validation
 ansible-playbook site.yml \
-  --extra-vars "execution_order=['validate_and_apply_egs_license','kubeslice_controller_egs_chart','kubeslice_ui_egs_chart']" \
+  --extra-vars "execution_order=['label_nodes_gateway','validate_and_apply_egs_license','kubeslice_controller_egs_chart','kubeslice_ui_egs_chart']" \
   -vv
 
 # Execute AMD GPU operator setup (alternative to NVIDIA)
@@ -505,9 +518,9 @@ ansible-playbook site.yml \
   --extra-vars "execution_order=['cert_manager','amd_gpu_operator_chart','amd_gpu_deviceconfig_manifest']" \
   -vv
 
-# Execute complete EGS installation (license validation first, then components)
+# Execute complete EGS installation (node labeling first, then license validation, then components)
 ansible-playbook site.yml \
-  --extra-vars "execution_order=['validate_and_apply_egs_license','kubeslice_controller_egs_chart','kubeslice_ui_egs_chart','kubeslice_worker_egs_chart','egs_project_manifest','egs_cluster_registration_worker_1','fetch_worker_secret_worker_1']" \
+  --extra-vars "execution_order=['label_nodes_gateway','validate_and_apply_egs_license','kubeslice_controller_egs_chart','kubeslice_ui_egs_chart','kubeslice_worker_egs_chart','egs_project_manifest','egs_cluster_registration_worker_1','fetch_worker_secret_worker_1']" \
   -vv
 
 # Execute only NGINX ingress setup

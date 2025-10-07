@@ -260,6 +260,7 @@ execution_order:
   # - local_path_retain_storageclass  
 
   # Base Applications
+  - label_nodes_gateway            # Label all nodes with kubeslice.io/node-type=gateway
   - gpu_operator_chart
   - prometheus_stack
   - validate_and_apply_egs_license  # Validate and apply EGS license before EGS installation
@@ -915,6 +916,16 @@ manifests:
 
 command_exec:
 
+  - name: "label_nodes_gateway"
+    kubeconfig: "{{ kubeconfig | default(global_kubeconfig) }}"
+    kubecontext: "{{ kubecontext | default(global_kubecontext) }}"
+    commands:
+      - cmd: |
+          # Label all nodes with kubeslice.io/node-type=gateway
+          kubectl get nodes -o name | xargs -I {} kubectl label {} kubeslice.io/node-type=gateway --overwrite
+        env:
+          KUBECONFIG: "{{ kubeconfig | default(global_kubeconfig) }}"
+          KUBECONTEXT: "{{ kubecontext | default(global_kubecontext) }}"
 
   - name: "validate_and_apply_egs_license"
     kubeconfig: "{{ kubeconfig | default(global_kubeconfig) }}"
