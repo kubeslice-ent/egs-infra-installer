@@ -545,23 +545,6 @@ The UI approach provides:
    - **Re-run**: Execute the installation again after applying license
 
 
-### Debug Commands
-
-```bash
-# Check pod status and logs
-kubectl get pods --all-namespaces
-kubectl logs -n kubeslice-controller deployment/egs-controller
-kubectl logs -n kubeslice-controller deployment/egs-ui
-
-# Check license and services
-kubectl get secret egs-license-file -n kubeslice-controller
-kubectl get svc --all-namespaces
-
-# Check resources and events
-kubectl top nodes
-kubectl get events --all-namespaces --sort-by='.lastTimestamp'
-```
-
 For additional support, please refer to the detailed documentation in the `docs/` folder or create an issue in the repository.
 
 ---
