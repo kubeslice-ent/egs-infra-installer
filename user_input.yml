@@ -446,7 +446,7 @@ helm_charts:
       global:
         imageRegistry: "harbor.saas1.smart-scaler.io/avesha/aveshasystems"
       kubesliceNetworking:
-        enabled: true
+        enabled: false
       operator:
         env:
           - name: DCGM_EXPORTER_JOB_NAME
