@@ -217,23 +217,25 @@ sed -i \
 
 ---
 
-## 4. EGS License Setup
+## 4. EGS Prerequisites
 
-> ⚠️ **Important**: License setup must be completed BEFORE installing any EGS components. The cluster fingerprint generation and license application are prerequisites for all EGS installations.
+> ⚠️ **Critical**: The following steps are MANDATORY prerequisites that must be completed BEFORE installing any EGS components. EGS installation will fail without these prerequisites.
 
-### Step 4.0: Label Cluster Nodes
+### Step 4.1: Label Cluster Nodes (OPTIONAL)
 
-Before setting up the EGS license, all nodes in the cluster must be labeled with `kubeslice.io/node-type=gateway`. This is automatically handled by the installer, but you can also run it manually:
+Nodes in the cluster need to be labeled with `kubeslice.io/node-type=gateway` before EGS installation. This is automatically handled by the installer script, but you can also run it manually:
 
 ```bash
-# Label all nodes with kubeslice.io/node-type=gateway
+# Label nodes with kubeslice.io/node-type=gateway (optional - script handles this)
 kubectl get nodes -o name | xargs -I {} kubectl label {} kubeslice.io/node-type=gateway --overwrite
 
 # Verify the labels
 kubectl get nodes -l kubeslice.io/node-type=gateway
 ```
 
-### Step 4.1: Generate Cluster Fingerprint
+> **Note**: The installer automatically handles node labeling, so this step is optional for manual execution.
+
+### Step 4.2: Generate Cluster Fingerprint (REQUIRED)
 
 Generate the cluster fingerprint required for EGS license generation:
 
@@ -244,68 +246,38 @@ kubectl get namespace kube-system -o=jsonpath='{.metadata.creationTimestamp}{.me
 
 Copy the output and save it for the next step.
 
-### Step 4.2: Get EGS License
+### Step 4.3: Get EGS License (REQUIRED)
 
 1. **Visit EGS Registration Portal**: Go to [https://avesha.io/egs-registration](https://avesha.io/egs-registration)
 2. **Fill out the registration form**:
    - Enter your full name, company name, title/position
    - Provide your work email address
-   - Paste the cluster fingerprint from Step 4.1
+   - Paste the cluster fingerprint from Step 4.2
    - Select your cloud type
    - Agree to terms and conditions
 3. **Submit registration** and wait for Avesha to process your request
 4. **Receive license file** via email from Avesha
 
-### Step 4.3: Place License File
+### Step 4.4: Apply EGS License (REQUIRED)
 
-Place your downloaded license file in the designated folder:
+You have two options for applying the EGS license:
 
+**Option 1: Automated Application (Recommended)**
 ```bash
-# Copy your license file to the required location
+# Place license file in the designated folder
 cp your-egs-license.yaml files/egs-license/egs-license.yaml
+```
+The installer will automatically detect and apply the license during deployment.
+
+**Option 2: Manual Application**
+```bash
+# Apply license manually
+kubectl apply -f files/egs-license/egs-license.yaml
 ```
 
 The license file should contain a Kubernetes Secret with the name `egs-license-file` in the `kubeslice-controller` namespace.
 
-### Step 4.4: License Validation
-
-The installer will automatically validate the license during deployment. The validation includes:
-- ✅ License file exists and is valid
-- ✅ License secret is created in the cluster
-- ✅ All required fields are present
-- ✅ License has not expired
-- ✅ License status is valid
-
-#### If License Validation Fails
-
-If you see an error like "EGS License is required before proceeding with EGS installation!", follow these steps:
-
-1. **Check if you have a valid license file**:
-   ```bash
-   ls -la files/egs-license/egs-license.yaml
-   cat files/egs-license/egs-license.yaml
-   ```
-
-2. **If the license file is empty or missing**, you need to:
-   - Complete the registration at [https://avesha.io/egs-registration](https://avesha.io/egs-registration)
-   - Download the license file from Avesha
-   - Place it in `files/egs-license/egs-license.yaml`
-
-3. **If you have a license file**, apply it manually:
-   ```bash
-   kubectl apply -f files/egs-license/egs-license.yaml
-   ```
-
-4. **Verify the license secret was created**:
-   ```bash
-   kubectl get secret egs-license-file -n kubeslice-controller
-   kubectl describe secret egs-license-file -n kubeslice-controller
-   ```
-
-5. **Re-run the EGS installation**:
-   ```bash
-   ansible-playbook site.yml --extra-vars "execution_order=['validate_and_apply_egs_license','kubeslice_controller_egs_chart']"
-   ```
+> 📖 **For detailed troubleshooting and validation steps**, see the [EGS License Setup Guide](docs/EGS-License-Setup.md)
 
 ---
 

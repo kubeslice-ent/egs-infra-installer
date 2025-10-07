@@ -9,6 +9,9 @@ This document provides step-by-step instructions for obtaining and applying the 
 - [1. EGS Registration Process](#1-egs-registration-process)
 - [2. License Retrieval](#2-license-retrieval)
 - [3. License Application](#3-license-application)
+- [4. Node Labeling (Required)](#4-node-labeling-required)
+- [5. Manual License Application](#5-manual-license-application)
+- [6. Troubleshooting](#6-troubleshooting)
 
 ## Overview
 
@@ -159,6 +162,138 @@ kubectl get secret -n kubeslice-controller
 
 # Verify secret details
 kubectl describe secret egs-license-file -n kubeslice-controller
+```
+
+## 4. Node Labeling (Required)
+
+Before setting up the EGS license, all nodes in the cluster must be labeled with `kubeslice.io/node-type=gateway`. This is automatically handled by the EGS Infra Installer, but you can also run it manually:
+
+### 4.1 Label All Nodes
+
+```bash
+# Label all nodes with kubeslice.io/node-type=gateway
+kubectl get nodes -o name | xargs -I {} kubectl label {} kubeslice.io/node-type=gateway --overwrite
+
+# Verify the labels
+kubectl get nodes -l kubeslice.io/node-type=gateway
+```
+
+### 4.2 Verify Node Labels
+
+Confirm that all nodes have been properly labeled:
+
+```bash
+# Check all nodes and their labels
+kubectl get nodes --show-labels | grep kubeslice.io/node-type=gateway
+
+# Count labeled nodes
+kubectl get nodes -l kubeslice.io/node-type=gateway --no-headers | wc -l
+```
+
+## 5. License Application Methods
+
+You have two options for applying the EGS license to your cluster:
+
+### Option 1: Automated License Application (Recommended)
+
+Place your downloaded license file in the designated folder, and the installer will automatically apply it:
+
+```bash
+# Copy your license file to the required location
+cp your-egs-license.yaml files/egs-license/egs-license.yaml
+```
+
+The installer will automatically detect and apply the license file during deployment.
+
+### Option 2: Manual License Application
+
+If you prefer to apply the license manually or need to troubleshoot license issues:
+
+```bash
+# Apply the license to your cluster manually
+kubectl apply -f files/egs-license/egs-license.yaml
+
+# Verify the license secret was created
+kubectl get secret egs-license-file -n kubeslice-controller
+kubectl describe secret egs-license-file -n kubeslice-controller
+```
+
+### 5.1 License File Requirements
+
+The license file should contain a Kubernetes Secret with the name `egs-license-file` in the `kubeslice-controller` namespace.
+
+### 5.3 Verify License Secret
+
+Ensure the license secret contains all required fields:
+
+```bash
+# Check secret exists
+kubectl get secret egs-license-file -n kubeslice-controller
+
+# Verify secret labels
+kubectl get secret egs-license-file -n kubeslice-controller -o yaml | grep -A 10 labels:
+
+# Check secret data fields
+kubectl get secret egs-license-file -n kubeslice-controller -o jsonpath='{.data}' | jq -r 'keys[]'
+```
+
+The secret should contain the following data fields:
+- `customer-name`
+- `license-created`
+- `license-expiration`
+- `license-id`
+- `license-type`
+- `license.key`
+- `machine.file`
+
+## 6. Troubleshooting
+
+### 6.1 License File Issues
+
+**Problem**: License file is empty or missing
+```bash
+# Check if license file exists and has content
+ls -la files/egs-license/egs-license.yaml
+cat files/egs-license/egs-license.yaml
+```
+
+**Solution**: Complete registration at [https://avesha.io/egs-registration](https://avesha.io/egs-registration) and download the license file.
+
+### 6.2 License Secret Issues
+
+**Problem**: License secret doesn't exist
+```bash
+# Check if secret exists
+kubectl get secret egs-license-file -n kubeslice-controller
+```
+
+**Solution**: Apply license manually:
+```bash
+kubectl apply -f files/egs-license/egs-license.yaml
+```
+
+### 6.3 License Validation Issues
+
+**Problem**: License secret exists but is invalid
+```bash
+# Check secret details
+kubectl describe secret egs-license-file -n kubeslice-controller
+
+# Verify secret data
+kubectl get secret egs-license-file -n kubeslice-controller -o yaml
+```
+
+**Solution**: Ensure the license file contains all required fields and labels.
+
+### 6.4 Node Labeling Issues
+
+**Problem**: Nodes not properly labeled
+```bash
+# Check current node labels
+kubectl get nodes --show-labels
+
+# Re-label nodes
+kubectl get nodes -o name | xargs -I {} kubectl label {} kubeslice.io/node-type=gateway --overwrite
 ```
 
 ## Additional Information
