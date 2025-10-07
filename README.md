@@ -1,4 +1,4 @@
-# Avesha Apps Installer
+# EGS Infra Installer
 
 Ansible-based installer for Avesha EGS (Elastic GPU Service) components and Kubernetes cluster deployment.
 
