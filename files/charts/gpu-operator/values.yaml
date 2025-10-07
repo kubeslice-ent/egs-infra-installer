@@ -40,6 +40,10 @@ daemonsets:
   - key: nvidia.com/gpu
     operator: Exists
     effect: NoSchedule
+  - key: "kubeslice.io/egs"
+    operator: "Equal"
+    value: "dedicated-node"
+    effect: "NoSchedule"
   # configuration for controlling update strategy("OnDelete" or "RollingUpdate") of GPU Operands
   # note that driver Daemonset is always set with OnDelete to avoid unintended disruptions
   updateStrategy: "RollingUpdate"
@@ -92,6 +96,10 @@ operator:
   - key: "node-role.kubernetes.io/control-plane"
     operator: "Equal"
     value: ""
+    effect: "NoSchedule"
+  - key: "kubeslice.io/egs"
+    operator: "Equal"
+    value: "dedicated-node"
     effect: "NoSchedule"
   annotations:
     openshift.io/scc: restricted-readonly
