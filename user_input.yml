@@ -350,7 +350,7 @@ helm_charts:
     chart_version: "1.14.3"
     release_values:
       global:
-        imageRegistry: docker.io/aveshasystems
+        imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
         namespaceConfig:
           labels: {}
           annotations: {}
@@ -387,7 +387,7 @@ helm_charts:
     chart_version: "1.14.3"
     release_values:
       global:
-        imageRegistry: docker.io/aveshasystems
+        imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
       kubeslice:
         prometheus:
           url: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
@@ -438,7 +438,7 @@ helm_charts:
         name: "worker-1"
         endpoint: "https://{{ kubernetes_deployment.api_server.host }}:{{ kubernetes_deployment.api_server.port }}"
       global:
-        imageRegistry: "docker.io/aveshasystems"
+        imageRegistry: "harbor.saas1.smart-scaler.io/avesha/aveshasystems"
       egs:
         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
@@ -841,7 +841,7 @@ manifests:
       metrics_exporter_enable: true
       metrics_exporter_service_type: "NodePort"
       metrics_exporter_node_port: 32500
-      metrics_exporter_image: "docker.io/rocm/device-metrics-exporter:v1.2.0"
+      metrics_exporter_image: "harbor.saas1.smart-scaler.io/avesha/rocm/device-metrics-exporter:v1.2.0"
       selector_label_key: "feature.node.kubernetes.io/amd-gpu"
       selector_label_value: "true"
 
@@ -896,7 +896,7 @@ manifests:
     variables:
       mcp_server_name: "smart-scaler-mcp-server"
       mcp_server_namespace: "smart-scaler"
-      mcp_server_image: "docker.io/aveshasystems/smart-scaler-mcp-server:v1.0.1"
+      mcp_server_image: "harbor.saas1.smart-scaler.io/avesha/aveshasystems/smart-scaler-mcp-server:v1.0.1"
       mcp_server_image_pull_secret: "avesha-systems"
       mcp_server_prometheus_url: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/"
       mcp_server_tenant_id: "tenant-b200-local"
