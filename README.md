@@ -57,60 +57,92 @@ sudo apt-get install python3-venv python3-full -y
 python3 -m venv venv
 source venv/bin/activate
 
-# Install required packages
-pip install -r requirements.txt
+# Install Python dependencies
+chmod +x files/install-requirements.sh
+./files/install-requirements.sh
+
+# Install Ansible collections
+LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 ansible-galaxy collection install -r requirements.yml --force
 ```
 
-### Step 2.2: Configure Inventory
-
-Edit the inventory file to match your cluster setup:
+### Step 2.2: Generate SSH Keys
 
 ```bash
-# Edit the inventory file
-nano inventory/hosts
+# Generate SSH key for cluster access
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/k8s_rsa -N ""
+
+# Copy SSH key to each node (repeat for all nodes)
+ssh-copy-id -i ~/.ssh/k8s_rsa.pub user@node-ip
 ```
 
-Example inventory configuration:
+### Step 2.3: Configure user_input.yml
 
-```ini
-[all]
-node1 ansible_host=192.168.1.10 ip=192.168.1.10
-node2 ansible_host=192.168.1.11 ip=192.168.1.11
-node3 ansible_host=192.168.1.12 ip=192.168.1.12
+Edit `user_input.yml` with your cluster configuration:
 
-[kube_control_plane]
-node1
+This section defines the settings required to enable and configure a Kubernetes cluster deployment using Ansible.
 
-[etcd]
-node1
+#### 🔧 **Note**: Replace placeholders with actual values before running the playbook.
 
-[kube_node]
-node2
-node3
+```yaml
+kubernetes_deployment:
+  enabled: true  # Enable Kubernetes deployment via Ansible
 
-[calico_rr]
+  api_server:
+    host: "PUBLIC_IP"        # Public IP of Kubernetes API server
+    port: 6443               # Default secure port
+    secure: true             # Use HTTPS (recommended)
+
+  ssh_key_path: "/absolute/path/to/.ssh/k8s_rsa"     # SSH private key path
+  default_ansible_user: "REPLACE_SSH_USER"           # SSH user (e.g., ubuntu, ec2-user)
+  ansible_sudo_pass: ""                              # Optional: sudo password
+
+  control_plane_nodes:
+    - name: "master-1"
+      ansible_host: "PUBLIC_IP"       # Public IP for SSH
+      ansible_user: "REPLACE_SSH_USER"
+      ansible_become: true
+      ansible_become_method: "sudo"
+      ansible_become_user: "root"
+      private_ip: "PRIVATE_IP"        # Internal/private IP
 ```
 
-### Step 2.3: Configure Cluster Variables
+#### ⚙️ For Single Node: Quick Configuration Update (Command-Line Shortcut)
 
-Edit the cluster configuration:
+You can quickly update your `user_input.yml` by replacing only the **values** in this command based on your environment.
+**Keep the placeholder keywords (`PUBLIC_IP`, `PRIVATE_IP`, etc.) on the left side exactly as-is.**
+
+> ⚠️ **Warning:**
+> Replace **only** the values on the right-hand side (`192.168.1.100`, `root`, etc.) with your actual environment details.
+> **Do not modify** the placeholder keywords (`PUBLIC_IP`, `PRIVATE_IP`, etc.) — they are required for matching.
+
+#### 🧪 Example Command
 
 ```bash
-# Edit cluster configuration
-nano inventory/kubespray/k8s_cluster.yml
+sed -i \
+  -e 's|PUBLIC_IP|172.235.157.18|g' \
+  -e 's|PRIVATE_IP|172.235.157.18|g' \
+  -e 's|REPLACE_SSH_USER|root|g' \
+  -e 's|/absolute/path/to/.ssh/k8s_rsa|/root/.ssh/k8s_rsa|g' \
+  -e '/kubernetes_deployment:/,/^[[:space:]]*[^[:space:]]*enabled:/ s/enabled: false/enabled: true/' \
+  user_input.yml
 ```
 
-Key configurations to verify:
-- `kube_version`: Kubernetes version
-- `cluster_name`: Your cluster name
-- `kube_network_plugin`: Network plugin (calico, flannel, etc.)
-- `kube_service_addresses`: Service CIDR
-- `kube_pods_subnet`: Pod CIDR
+> ✅ This command will:
+>
+> * Replace `PUBLIC_IP` and `PRIVATE_IP` placeholders with your node IP
+> * Set the correct SSH user and key path
+> * Enable Kubernetes deployment by updating `enabled: false` → `enabled: true`
 
-### Step 2.4: Run Cluster Installation
+#### 📌 Note:
+
+If you're deploying on a **single node** and running the command from the **same server**, you can use the **same IP address** for both `PUBLIC_IP` and `PRIVATE_IP`.
+
+---
+
+### Step 2.4: Deploy Kubernetes Cluster
 
 ```bash
-# Make the setup script executable
+# Make the script executable
 chmod +x setup_kubernetes.sh
 
 # Run the installation script with sudo
@@ -123,10 +155,20 @@ chmod +x setup_kubernetes.sh
 sudo chown $(whoami):$(whoami) -R .
 
 # Set the KUBECONFIG environment variable
-export KUBECONFIG=$(pwd)/inventory/artifacts/admin.conf
+export KUBECONFIG=output/kubeconfig
 
-# Verify cluster is running
+# Verify cluster access and node status
 kubectl get nodes
+```
+
+### Step 2.6: Verify Installation
+
+```bash
+# Check cluster status
+kubectl get nodes
+kubectl cluster-info
+
+# Verify all system pods are running
 kubectl get pods --all-namespaces
 ```
 
