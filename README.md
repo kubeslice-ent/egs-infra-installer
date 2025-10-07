@@ -46,8 +46,8 @@ Ansible-based installer for Avesha EGS (Elastic GPU Service) components and Kube
 
 ```bash
 # Clone the repository
-git clone https://github.com/smart-scaler/avesha-apps-installer.git
-cd avesha-apps-installer
+git clone https://github.com/kubeslice-ent/egs-infra-installer.git
+cd egs-infra-installer
 
 # Install Python3 
 sudo apt update
@@ -161,7 +161,7 @@ chmod +x setup_kubernetes.sh
  ./setup_kubernetes.sh
 ```
 
-### Step 2.5 Change ownership of the avesha-apps-installer working directory
+### Step 2.5 Change ownership of the egs-infra-installer working directory
 
 ```bash
 sudo chown $(whoami):$(whoami) -R .
@@ -275,6 +275,37 @@ The installer will automatically validate the license during deployment. The val
 - ✅ All required fields are present
 - ✅ License has not expired
 - ✅ License status is valid
+
+#### If License Validation Fails
+
+If you see an error like "EGS License is required before proceeding with EGS installation!", follow these steps:
+
+1. **Check if you have a valid license file**:
+   ```bash
+   ls -la files/egs-license/egs-license.yaml
+   cat files/egs-license/egs-license.yaml
+   ```
+
+2. **If the license file is empty or missing**, you need to:
+   - Complete the registration at [https://avesha.io/egs-registration](https://avesha.io/egs-registration)
+   - Download the license file from Avesha
+   - Place it in `files/egs-license/egs-license.yaml`
+
+3. **If you have a license file**, apply it manually:
+   ```bash
+   kubectl apply -f files/egs-license/egs-license.yaml
+   ```
+
+4. **Verify the license secret was created**:
+   ```bash
+   kubectl get secret egs-license-file -n kubeslice-controller
+   kubectl describe secret egs-license-file -n kubeslice-controller
+   ```
+
+5. **Re-run the EGS installation**:
+   ```bash
+   ansible-playbook site.yml --extra-vars "execution_order=['validate_and_apply_egs_license','kubeslice_controller_egs_chart']"
+   ```
 
 ---
 
@@ -418,11 +449,20 @@ kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 909
    - Check license secret exists: `kubectl get secret egs-license-file -n kubeslice-controller`
    - Verify license has not expired
    - Ensure license contains all required fields
+   - If license file is empty, complete registration at [https://avesha.io/egs-registration](https://avesha.io/egs-registration)
+   - Apply license manually: `kubectl apply -f files/egs-license/egs-license.yaml`
 
 4. **GPU Support Issues**
    - Verify NVIDIA drivers are installed on nodes
    - Check `nvidia_runtime.enabled` is set to `true`
    - Review GPU operator pod status
+
+5. **"EGS License is required before proceeding" Error**
+   - This error occurs when the license file is empty or the license secret doesn't exist
+   - **Solution 1**: Complete registration at [https://avesha.io/egs-registration](https://avesha.io/egs-registration) and download license
+   - **Solution 2**: Apply existing license manually: `kubectl apply -f files/egs-license/egs-license.yaml`
+   - **Verify**: Check secret exists: `kubectl get secret egs-license-file -n kubeslice-controller`
+   - **Re-run**: Execute the installation again after applying license
 
 
 ### Debug Commands
@@ -564,7 +604,7 @@ This command will:
 
 ## Support and Contributing
 
-For support, questions, or contributions to the Avesha Apps Installer:
+For support, questions, or contributions to the EGS Infra Installer:
 
 - **Documentation**: Check the `docs/` folder for detailed guides
 - **Issues**: Report issues on the GitHub repository
