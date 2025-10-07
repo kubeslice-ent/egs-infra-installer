@@ -213,9 +213,11 @@ sed -i \
 
 The installer will automatically generate a cluster fingerprint required for EGS license generation:
 
+**Important**: Make sure `kubernetes_deployment.enabled` is set to `false` in `user_input.yml` before running this command.
+
 ```bash
 # Run the deployment to generate cluster fingerprint
-ansible-playbook site.yml --tags "generate_cluster_fingerprint"
+ansible-playbook site.yml --extra-vars "execution_order=['generate_cluster_fingerprint']"
 ```
 
 The cluster fingerprint will be saved to `output/cluster-fingerprint.txt`.
@@ -398,6 +400,12 @@ kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 909
    - Verify NVIDIA drivers are installed on nodes
    - Check `nvidia_runtime.enabled` is set to `true`
    - Review GPU operator pod status
+
+5. **Cluster Fingerprint Generation Failed**
+   - Ensure `kubernetes_deployment.enabled` is set to `false` in `user_input.yml`
+   - Verify kubeconfig file exists at `output/kubeconfig`
+   - Check that kubectl can access the cluster: `kubectl get nodes`
+   - Ensure the cluster is running and accessible
 
 ### Debug Commands
 
