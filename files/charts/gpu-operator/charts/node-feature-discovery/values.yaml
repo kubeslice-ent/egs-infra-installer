@@ -479,7 +479,11 @@ worker:
 
   nodeSelector: {}
 
-  tolerations: []
+  tolerations:
+  - key: "kubeslice.io/egs"
+    operator: "Equal"
+    value: "dedicated-node"
+    effect: "NoSchedule"
 
   annotations: {}
 
@@ -556,10 +560,10 @@ topologyUpdater:
 
   nodeSelector: {}
   tolerations:
-    - key: "kubeslice.io/egs"
-      operator: "Equal"
-      value: "dedicated-node"
-      effect: "NoSchedule"
+  - key: "kubeslice.io/egs"
+    operator: "Equal"
+    value: "dedicated-node"
+    effect: "NoSchedule"
   annotations: {}
   daemonsetAnnotations: {}
   affinity: {}
@@ -594,10 +598,10 @@ gc:
 
   nodeSelector: {}
   tolerations:
-    - key: "kubeslice.io/egs"
-      operator: "Equal"
-      value: "dedicated-node"
-      effect: "NoSchedule"
+  - key: "kubeslice.io/egs"
+    operator: "Equal"
+    value: "dedicated-node"
+    effect: "NoSchedule"
   annotations: {}
   deploymentAnnotations: {}
   affinity: {}
