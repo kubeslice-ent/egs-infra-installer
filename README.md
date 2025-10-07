@@ -322,26 +322,61 @@ kubectl get secret egs-license-file -n kubeslice-controller
 
 ```sh
 NAMESPACE              NAME                                                          READY   STATUS      RESTARTS      AGE
-gpu-operator           gpu-feature-discovery-l6sj7                                   1/1     Running     0             39m
-gpu-operator           gpu-operator-669c87dd9-fgjr4                                  1/1     Running     0             70m
-gpu-operator           nvidia-device-plugin-daemonset-nzjq6                          1/1     Running     0             40m
-gpu-operator           nvidia-dcgm-exporter-psqc5                                    1/1     Running     0             39m
-kt-postgresql          kt-postgresql-0                                               1/1     Running     0             25s
-kubeslice-controller   egs-core-apis-56b6d94d58-w88bz                                1/1     Running     0             52m
-kubeslice-controller   kubeslice-controller-manager-5c4795468b-4dd2g                 2/2     Running     0             10m
-kubeslice-controller   kubeslice-ui-proxy-5fd4fff495-7nxfq                           1/1     Running     0             52m
-kubeslice-system       egs-agent-7d4f6dc6d-frqj5                                     1/1     Running     0             24m
-kubeslice-system       kubeslice-operator-9bf7997d5-bmcfk                            2/2     Running     0             10m
-monitoring             prometheus-grafana-67dc5c9fc9-2nfrt                           3/3     Running     0             69m
-monitoring             prometheus-prometheus-kube-prometheus-prometheus-0            2/2     Running     0             60m
+gpu-operator           gpu-feature-discovery-xkbx7                                   1/1     Running     0             69m
+gpu-operator           gpu-operator-669c87dd9-cxpfb                                  1/1     Running     0             69m
+gpu-operator           gpu-operator-node-feature-discovery-gc-6f9bcf88fb-sw59w       1/1     Running     0             68m
+gpu-operator           gpu-operator-node-feature-discovery-master-57d9fbd8b8-2wlc8   1/1     Running     0             68m
+gpu-operator           gpu-operator-node-feature-discovery-worker-mgn25              1/1     Running     0             68m
+gpu-operator           nvidia-container-toolkit-daemonset-tm7zp                      1/1     Running     0             68m
+gpu-operator           nvidia-cuda-validator-z5cnd                                   0/1     Completed   0             67m
+gpu-operator           nvidia-dcgm-exporter-cc62g                                    1/1     Running     0             68m
+gpu-operator           nvidia-dcgm-vxrk8                                             1/1     Running     0             68m
+gpu-operator           nvidia-device-plugin-daemonset-ckpt2                          1/1     Running     0             68m
+gpu-operator           nvidia-operator-validator-ggj7g                               1/1     Running     0             68m
+kt-postgresql          kt-postgresql-0                                               1/1     Running     0             69m
+kube-system            calico-kube-controllers-588d6df6c9-xmbcz                      1/1     Running     0             69m
+kube-system            calico-node-zqglt                                             1/1     Running     0             69m
+kube-system            coredns-5c54f84c97-8xzb4                                      1/1     Running     0             69m
+kube-system            dns-autoscaler-676999957f-chz6k                               1/1     Running     0             69m
+kube-system            etcd-master-1                                                 1/1     Running     0             69m
+kube-system            haproxy-master-1                                              1/1     Running     0             69m
+kube-system            kube-apiserver-master-1                                       1/1     Running     0             69m
+kube-system            kube-controller-manager-master-1                              1/1     Running     0             68m
+kube-system            kube-proxy-qt5k4                                              1/1     Running     0             69m
+kube-system            kube-scheduler-master-1                                       1/1     Running     0             69m
+kube-system            metrics-server-5dff58bc89-9m2rb                               1/1     Running     0             69m
+kube-system            nodelocaldns-z7lhs                                            1/1     Running     0             69m
+kubeslice-controller   egs-core-apis-56b6d94d58-ggphq                                1/1     Running     0             68m
+kubeslice-controller   egs-gpr-manager-688ddfcc5d-kdhwv                              1/1     Running     0             68m
+kubeslice-controller   egs-inventory-controller-manager-79db45b5b6-nfdfq             1/1     Running     0             68m
+kubeslice-controller   egs-queue-manager-7ffcb656c4-tqmg2                            1/1     Running     0             68m
+kubeslice-controller   kubeslice-api-gw-6fbd6c489c-6lbm4                             1/1     Running     0             69m
+kubeslice-controller   kubeslice-controller-manager-559f795b54-8l62f                 2/2     Running     0             69m
+kubeslice-controller   kubeslice-ui-7c86cf87b8-gxz6h                                 1/1     Running     0             69m
+kubeslice-controller   kubeslice-ui-proxy-5fd4fff495-zbrlx                           1/1     Running     0             69m
+kubeslice-controller   kubeslice-ui-v2-6ff4fb6444-xkdxx                              1/1     Running     0             69m
+kubeslice-controller   kubetally-pricing-service-59565c8cfc-d4rt2                    1/1     Running     0             69m
+kubeslice-controller   kubetally-report-d4f8b5fcd-q8ktq                              1/1     Running     0             69m
+kubeslice-system       aiops-operator-9f999b66b-gk4bk                                2/2     Running     0             69m
+kubeslice-system       egs-agent-7d4f6dc6d-6r4wp                                     1/1     Running     0             69m
+kubeslice-system       kubeslice-operator-97858cd44-5flcz                            2/2     Running     0             69m
+local-path-storage     local-path-provisioner-7d4b6f8ccf-wmspb                       1/1     Running     0             69m
+monitoring             alertmanager-prometheus-kube-prometheus-alertmanager-0        2/2     Running     0             69m
+monitoring             prometheus-grafana-67dc5c9fc9-jtlnf                           3/3     Running     0             68m
+monitoring             prometheus-kube-prometheus-operator-775d58dc6b-gfjlg          1/1     Running     0             69m
+monitoring             prometheus-kube-state-metrics-856b96f64d-rgz52                1/1     Running     0             68m
+monitoring             prometheus-prometheus-kube-prometheus-prometheus-0            2/2     Running     0             69m
+monitoring             prometheus-prometheus-node-exporter-h5dgr                     1/1     Running     0             69m
 ```
 
 **Key Components Status:**
-- ✅ **GPU Operator**: NVIDIA GPU components running (device plugin, DCGM, container toolkit)
+- ✅ **GPU Operator**: Complete NVIDIA GPU stack running (device plugin, DCGM, container toolkit, validators)
 - ✅ **PostgreSQL**: Database running in `kt-postgresql` namespace
-- ✅ **EGS Controller**: Management components running in `kubeslice-controller`
+- ✅ **EGS Controller**: All management components running in `kubeslice-controller`
 - ✅ **EGS Worker**: Agent and operator running in `kubeslice-system`
-- ✅ **Monitoring**: Prometheus and Grafana running in `monitoring` namespace
+- ✅ **Monitoring**: Complete Prometheus stack running in `monitoring` namespace
+- ✅ **Kubernetes Core**: All core system components running in `kube-system`
+- ✅ **Storage**: Local path provisioner running in `local-path-storage`
 
 ### Step 5.3: EGS Management UI Access
 
