@@ -271,6 +271,7 @@ execution_order:
   
   # EGS Application
   - validate_and_apply_egs_license  # Validate and apply EGS license before EGS installation
+  - cleanup_kubetally_jobs          # Clean up existing kubetally jobs before controller installation
   - kubeslice_controller_egs  # Install EGS controller first
   - kubeslice_ui_egs         # Install EGS UI after controller
   - egs_project_manifest              # Create EGS project
@@ -966,6 +967,19 @@ command_exec:
     kubecontext: "{{ kubecontext | default(global_kubecontext) }}"
     commands:
       - cmd: "bash {{ playbook_dir }}/files/validate-and-apply-egs-license.sh"
+        env:
+          KUBECONFIG: "{{ kubeconfig | default(global_kubeconfig) }}"
+          KUBECONTEXT: "{{ kubecontext | default(global_kubecontext) }}"
+
+  - name: "cleanup_kubetally_jobs"
+    kubeconfig: "{{ kubeconfig | default(global_kubeconfig) }}"
+    kubecontext: "{{ kubecontext | default(global_kubecontext) }}"
+    commands:
+      - cmd: |
+          # Clean up existing kubetally jobs to prevent immutable field errors
+          echo "Cleaning up existing kubetally jobs..."
+          kubectl delete job kubetally-pricing-updater-job -n kubeslice-controller --ignore-not-found
+          echo " kubetally job cleanup completed"
         env:
           KUBECONFIG: "{{ kubeconfig | default(global_kubeconfig) }}"
           KUBECONTEXT: "{{ kubecontext | default(global_kubecontext) }}"
