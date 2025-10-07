@@ -4,4 +4,12 @@
   include_tasks: tasks/process_execution_item.yml
   vars:
     execution_item: "{{ item }}"
-  loop: "{{ execution_order }}" 
+  loop: "{{ execution_order }}"
+  when: not (retry_config.enabled | default(false))
+
+- name: Process execution items with retry
+  include_tasks: tasks/retry_handler.yml
+  vars:
+    execution_item: "{{ item }}"
+  loop: "{{ execution_order }}"
+  when: retry_config.enabled | default(false) 

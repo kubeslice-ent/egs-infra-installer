@@ -1,0 +1,122 @@
+---
+# Retry Handler for EGS Installation
+# Provides retry mechanism for failed installations with configurable settings
+
+- name: Get retry configuration for current item
+  set_fact:
+    retry_config: "{{ retry_config | default({}) }}"
+    current_retry_config: >-
+      {{
+        retry_config.component_overrides[execution_item] | default({})
+        if (retry_config.component_overrides is defined and execution_item in retry_config.component_overrides)
+        else retry_config.component_retries[item_type] | default({})
+        if (retry_config.component_retries is defined and item_type in retry_config.component_retries)
+        else retry_config | default({})
+      }}
+
+- name: Set retry parameters
+  set_fact:
+    retry_enabled: "{{ retry_config.enabled | default(true) and current_retry_config.retry_on_failure | default(true) }}"
+    max_retries: "{{ current_retry_config.max_retries | default(retry_config.max_retries | default(3)) }}"
+    retry_delay: "{{ current_retry_config.retry_delay | default(retry_config.retry_delay | default(30)) }}"
+    exponential_backoff: "{{ current_retry_config.exponential_backoff | default(retry_config.exponential_backoff | default(true)) }}"
+    retry_count: 0
+    retry_success: false
+
+- name: Debug retry configuration
+  debug:
+    msg: |
+      Retry Configuration for {{ execution_item }}:
+      - Enabled: {{ retry_enabled }}
+      - Max Retries: {{ max_retries }}
+      - Retry Delay: {{ retry_delay }}s
+      - Exponential Backoff: {{ exponential_backoff }}
+      - Item Type: {{ item_type }}
+  when: retry_config.enabled | default(true)
+
+- name: Retry loop for failed installations
+  block:
+    - name: Increment retry count
+      set_fact:
+        retry_count: "{{ retry_count + 1 }}"
+      when: retry_count > 0
+
+    - name: Calculate retry delay with exponential backoff
+      set_fact:
+        current_retry_delay: >-
+          {{
+            retry_delay * (2 ** (retry_count - 1)) if exponential_backoff
+            else retry_delay
+          }}
+      when: retry_count > 0
+
+    - name: Wait before retry
+      pause:
+        seconds: "{{ current_retry_delay | default(retry_delay) }}"
+      when: 
+        - retry_count > 0
+        - retry_count <= max_retries
+
+    - name: Display retry attempt
+      debug:
+        msg: |
+          🔄 Retry attempt {{ retry_count }}/{{ max_retries }} for {{ execution_item }}
+          {% if retry_count > 1 %}
+          ⏱️  Waiting {{ current_retry_delay | default(retry_delay) }}s before retry...
+          {% endif %}
+      when: retry_count > 0
+
+    - name: Execute original task with retry
+      include_tasks: "tasks/process_execution_item_retry.yml"
+      vars:
+        retry_attempt: "{{ retry_count }}"
+      when: retry_count <= max_retries
+
+    - name: Check if retry was successful
+      set_fact:
+        retry_success: "{{ retry_result is defined and retry_result is succeeded }}"
+      when: retry_result is defined
+
+    - name: Continue retry loop if failed and more retries available
+      meta: continue
+      when: 
+        - retry_success | default(false) == false
+        - retry_count < max_retries
+
+    - name: Final failure after all retries
+      fail:
+        msg: |
+          ❌ {{ execution_item }} failed after {{ max_retries }} retry attempts
+          
+          Last error: {{ retry_result.msg | default('Unknown error') }}
+          
+          Troubleshooting steps:
+          1. Check component logs: kubectl logs -n <namespace> <pod-name>
+          2. Verify prerequisites are met
+          3. Check resource availability: kubectl top nodes
+          4. Review component configuration in user_input.yml
+          5. Consider increasing retry settings for this component
+      when: 
+        - retry_success | default(false) == false
+        - retry_count >= max_retries
+
+  when: retry_enabled
+
+- name: Execute without retry if disabled
+  include_tasks: "tasks/process_execution_item_retry.yml"
+  vars:
+    retry_attempt: 0
+  when: not retry_enabled
+
+- name: Track retry results
+  include_tasks: "tasks/summary_tracker.yml"
+  vars:
+    item_name: "{{ execution_item }}"
+    item_type: "{{ item_type }}"
+    item_details: >-
+      {{
+        'Retry attempts: ' + retry_count | string if retry_count > 0
+        else 'No retries needed'
+      }}
+    item_error: "{{ retry_result.msg | default('') if retry_result is defined and retry_result is failed else '' }}"
+  when: retry_config.enabled | default(true)

@@ -1,0 +1,87 @@
+---
+# Example: Retry Configuration for EGS Installation
+# This example shows how to configure retry behavior for different scenarios
+
+# Example 1: Basic retry configuration
+retry_config_basic:
+  enabled: true
+  max_retries: 3
+  retry_delay: 30
+  exponential_backoff: true
+
+# Example 2: Aggressive retry for critical components
+retry_config_aggressive:
+  enabled: true
+  max_retries: 5
+  retry_delay: 60
+  exponential_backoff: true
+  
+  component_overrides:
+    gpu_operator_chart:
+      max_retries: 8
+      retry_delay: 90
+      exponential_backoff: true
+    
+    kubeslice_controller_egs:
+      max_retries: 6
+      retry_delay: 75
+      exponential_backoff: true
+
+# Example 3: Conservative retry for stable environments
+retry_config_conservative:
+  enabled: true
+  max_retries: 2
+  retry_delay: 15
+  exponential_backoff: false
+  
+  component_retries:
+    helm_charts:
+      max_retries: 2
+      retry_delay: 30
+      exponential_backoff: false
+    
+    commands:
+      max_retries: 1
+      retry_delay: 10
+      exponential_backoff: false
+
+# Example 4: Disable retry for specific problematic components
+retry_config_selective:
+  enabled: true
+  max_retries: 3
+  retry_delay: 30
+  exponential_backoff: true
+  
+  component_overrides:
+    # Disable retry for this component
+    problematic_component:
+      max_retries: 0
+    
+    # Increase retry for critical components
+    validate_and_apply_egs_license:
+      max_retries: 5
+      retry_delay: 45
+      exponential_backoff: true
+
+# Example 5: Network-optimized retry for slow connections
+retry_config_network_optimized:
+  enabled: true
+  max_retries: 4
+  retry_delay: 45
+  exponential_backoff: true
+  
+  component_retries:
+    helm_charts:
+      max_retries: 4
+      retry_delay: 60
+      exponential_backoff: true
+    
+    manifests:
+      max_retries: 3
+      retry_delay: 30
+      exponential_backoff: true
+    
+    commands:
+      max_retries: 3
+      retry_delay: 20
+      exponential_backoff: false

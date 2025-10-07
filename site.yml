@@ -124,6 +124,7 @@
         execution_vars:
           avesha_docker_username: "{{ avesha_docker_username }}"
           avesha_docker_password: "{{ avesha_docker_password }}"
+        retry_config: "{{ retry_config | default({}) }}"
       when: execution_order_enabled | default(true)
 
   post_tasks:

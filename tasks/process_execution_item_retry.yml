@@ -1,0 +1,80 @@
+---
+# Execute individual execution item with retry support
+# This is a wrapper around the original process_execution_item.yml
+
+- name: Execute helm chart with retry
+  include_role:
+    name: helm_chart_install
+  vars:
+    item: "{{ current_item }}"
+  register: retry_result
+  when: item_type == 'helm'
+
+- name: Execute manifest with retry
+  include_role:
+    name: manifest_install
+  vars:
+    item: "{{ current_item }}"
+  register: retry_result
+  when: item_type == 'manifest'
+
+- name: Execute kubectl commands with retry
+  include_role:
+    name: kubectl_command
+  vars:
+    item: "{{ current_item }}"
+  register: retry_result
+  when: item_type == 'kubectl'
+
+- name: Execute command with retry
+  when: item_type == 'command'
+  block:
+    - name: Set command variables
+      set_fact:
+        kubeconfig: "{{ current_item.kubeconfig | default(global_kubeconfig) }}"
+        kubecontext: "{{ current_item.kubecontext | default(global_kubecontext) }}"
+
+    - name: Verify kubeconfig exists
+      stat:
+        path: "{{ kubeconfig }}"
+      register: kubeconfig_stat
+      when: kubeconfig is defined and kubeconfig != ''
+
+    - name: Fail if kubeconfig doesn't exist
+      fail:
+        msg: "Kubeconfig file {{ kubeconfig }} does not exist"
+      when: kubeconfig is defined and kubeconfig != '' and not kubeconfig_stat.stat.exists
+
+    - name: Execute command with retry
+      shell: "{{ cmd_item.cmd }}"
+      environment: "{{ cmd_item.env | default({}) | combine({'KUBECONFIG': kubeconfig}) }}"
+      loop: "{{ current_item.commands }}"
+      loop_control:
+        loop_var: cmd_item
+      register: retry_result
+      failed_when: 
+        - retry_result.rc != 0 
+        - not cmd_item.ignore_errors | default(false)
+      changed_when: retry_result.rc == 0
+
+    - name: Track successful command execution
+      include_tasks: "tasks/summary_tracker.yml"
+      vars:
+        item_name: "{{ current_item.name }}"
+        item_type: "command"
+        item_details: "Commands: {{ current_item.commands | length }} (Attempt {{ retry_attempt | default(1) }})"
+      when: retry_result is succeeded
+
+    - name: Track failed command execution
+      include_tasks: "tasks/summary_tracker.yml"
+      vars:
+        item_name: "{{ current_item.name }}"
+        item_type: "command"
+        item_error: "{{ retry_result.msg | default('Command execution failed') }}"
+        item_details: "Failed command: {{ retry_result.cmd | default('unknown') }} (Attempt {{ retry_attempt | default(1) }})"
+      when: retry_result is failed
+
+- name: Handle unknown item type
+  fail:
+    msg: "Unknown item type '{{ item_type }}' for execution item '{{ execution_item }}'"
+  when: item_type == 'unknown'
