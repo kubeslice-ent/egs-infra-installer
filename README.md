@@ -307,90 +307,49 @@ ansible-playbook site.yml -vvvv
 # Check all namespaces
 kubectl get namespaces
 
-# Expected namespaces:
-# - gpu-operator
-# - monitoring
-# - kubeslice-controller
-# - kubeslice-system
-
 # Verify EGS component status
 kubectl get pods -n gpu-operator
 kubectl get pods -n monitoring
 kubectl get pods -n kubeslice-controller
 kubectl get pods -n kubeslice-system
+kubectl get pods -n kt-postgresql
 
 # Verify EGS license
 kubectl get secret egs-license-file -n kubeslice-controller
-kubectl describe secret egs-license-file -n kubeslice-controller
 ```
 
-Expected output:
+**Expected Output:**
 
 ```sh
 NAMESPACE              NAME                                                          READY   STATUS      RESTARTS      AGE
 gpu-operator           gpu-feature-discovery-l6sj7                                   1/1     Running     0             39m
 gpu-operator           gpu-operator-669c87dd9-fgjr4                                  1/1     Running     0             70m
-gpu-operator           gpu-operator-node-feature-discovery-gc-6f9bcf88fb-9pnmq       1/1     Running     0             70m
-gpu-operator           gpu-operator-node-feature-discovery-master-57d9fbd8b8-c9s7w   1/1     Running     0             70m
-gpu-operator           gpu-operator-node-feature-discovery-worker-bwj7v              1/1     Running     1 (12m ago)   12m
-gpu-operator           nvidia-container-toolkit-daemonset-f4b69                      1/1     Running     0             39m
-gpu-operator           nvidia-cuda-validator-7bsfr                                   0/1     Completed   0             39m
-gpu-operator           nvidia-dcgm-bs9mf                                             1/1     Running     0             39m
-gpu-operator           nvidia-dcgm-exporter-psqc5                                    1/1     Running     0             39m
 gpu-operator           nvidia-device-plugin-daemonset-nzjq6                          1/1     Running     1 (39m ago)   40m
-gpu-operator           nvidia-operator-validator-jhxcw                               1/1     Running     0             39m
+gpu-operator           nvidia-dcgm-exporter-psqc5                                    1/1     Running     0             39m
 kt-postgresql          kt-postgresql-0                                               1/1     Running     0             25s
-kube-system            calico-kube-controllers-588d6df6c9-gn5dd                      1/1     Running     0             109m
-kube-system            calico-node-p9m2k                                             1/1     Running     0             40m
-kube-system            coredns-5c54f84c97-xljsx                                      1/1     Running     0             108m
-kube-system            dns-autoscaler-676999957f-jlf2p                               1/1     Running     0             108m
-kube-system            etcd-master-1                                                 1/1     Running     0             109m
-kube-system            haproxy-master-1                                              1/1     Running     0             109m
-kube-system            kube-apiserver-master-1                                       1/1     Running     1             109m
-kube-system            kube-controller-manager-master-1                              1/1     Running     1             109m
-kube-system            kube-proxy-9l6qr                                              1/1     Running     0             40m
-kube-system            kube-scheduler-master-1                                       1/1     Running     0             109m
-kube-system            metrics-server-5dff58bc89-p6fk8                               1/1     Running     0             108m
-kube-system            nodelocaldns-2dkgk                                            1/1     Running     0             40m
 kubeslice-controller   egs-core-apis-56b6d94d58-w88bz                                1/1     Running     0             52m
-kubeslice-controller   egs-gpr-manager-5c9866d4d7-nphxs                              1/1     Running     0             10m
-kubeslice-controller   egs-inventory-controller-manager-79db45b5b6-mxxww             1/1     Running     0             54m
-kubeslice-controller   egs-queue-manager-7ffcb656c4-84497                            1/1     Running     0             54m
-kubeslice-controller   kubeslice-api-gw-6fbd6c489c-dv7jc                             1/1     Running     0             48m
 kubeslice-controller   kubeslice-controller-manager-5c4795468b-4dd2g                 2/2     Running     0             10m
-kubeslice-controller   kubeslice-ui-7c86cf87b8-5p9p2                                 1/1     Running     0             52m
 kubeslice-controller   kubeslice-ui-proxy-5fd4fff495-7nxfq                           1/1     Running     0             52m
-kubeslice-controller   kubeslice-ui-v2-6ff4fb6444-vlb7f                              1/1     Running     0             52m
-kubeslice-controller   kubetally-pricing-service-59565c8cfc-8qbrt                    1/1     Running     0             54m
-kubeslice-controller   kubetally-pricing-updater-job-sg4xt                           1/1     Running     0             10m
-kubeslice-controller   kubetally-report-d4f8b5fcd-f4h9z                              1/1     Running     0             54m
-kubeslice-system       aiops-operator-5c85bc78bb-nvdgb                               2/2     Running     0             46m
 kubeslice-system       egs-agent-7d4f6dc6d-frqj5                                     1/1     Running     0             24m
 kubeslice-system       kubeslice-operator-9bf7997d5-bmcfk                            2/2     Running     0             10m
-local-path-storage     local-path-provisioner-7d4b6f8ccf-d2txt                       1/1     Running     0             108m
-monitoring             alertmanager-prometheus-kube-prometheus-alertmanager-0        2/2     Running     0             60m
 monitoring             prometheus-grafana-67dc5c9fc9-2nfrt                           3/3     Running     0             69m
-monitoring             prometheus-kube-prometheus-operator-775d58dc6b-csf7d          1/1     Running     0             69m
-monitoring             prometheus-kube-state-metrics-856b96f64d-46gzx                1/1     Running     0             69m
 monitoring             prometheus-prometheus-kube-prometheus-prometheus-0            2/2     Running     0             60m
-monitoring             prometheus-prometheus-node-exporter-dfvxv                     1/1     Running     0             69m
 ```
 
 **Key Components Status:**
-- ✅ **GPU Operator**: All NVIDIA GPU components running (device plugin, DCGM, container toolkit)
+- ✅ **GPU Operator**: NVIDIA GPU components running (device plugin, DCGM, container toolkit)
 - ✅ **PostgreSQL**: Database running in `kt-postgresql` namespace
-- ✅ **EGS Controller**: All EGS management components running in `kubeslice-controller`
-- ✅ **EGS Worker**: EGS agent and operator running in `kubeslice-system`
+- ✅ **EGS Controller**: Management components running in `kubeslice-controller`
+- ✅ **EGS Worker**: Agent and operator running in `kubeslice-system`
 - ✅ **Monitoring**: Prometheus and Grafana running in `monitoring` namespace
-- ✅ **KubeSlice**: Core networking components and operators running
 
-### Step 5.4: EGS Management UI Access
+### Step 5.3: EGS Management UI Access
 
 After successful EGS deployment, you can access the management UI and retrieve access tokens for project management.
 
-#### Get EGS UI Access URL
+#### a) Get EGS UI Access URL
 
-The EGS UI access method depends on your service configuration. Run the following commands to get the appropriate access URL:
+The EGS UI access method depends on your service configuration:
 
 ```bash
 # Check EGS UI service configuration
@@ -410,44 +369,26 @@ kubectl port-forward -n kubeslice-controller svc/kubeslice-ui-proxy 8080:443
 echo "https://localhost:8080"
 ```
 
-#### Get EGS Access Token
-
-To access the EGS UI, you'll need an access token. Retrieve it using the following command:
+#### b) Get EGS Access Token
 
 ```bash
 # Get access token for EGS UI
 kubectl get secret kubeslice-rbac-rw-admin -o jsonpath="{.data.token}" -n kubeslice-avesha --kubeconfig output/kubeconfig --context kubernetes-admin@cluster.local 2>/dev/null | base64 --decode
 ```
 
-#### Access EGS Management UI
+#### c) Access EGS Management UI
 
-1. **Open your browser** and navigate to the EGS UI URL from the previous step
-2. **Enter the access token** from the previous step when prompted for "Service Account Token"
+1. **Open your browser** and navigate to the EGS UI URL from step a)
+2. **Enter the access token** from step b) when prompted for "Service Account Token"
 3. **Start managing** your EGS clusters, projects, and GPU resources
 
-#### Verify EGS Components
+### Step 5.4: Monitoring Access
 
 ```bash
-# Check EGS controller status
-kubectl get pods -n kubeslice-controller
-
-# Check EGS worker status  
-kubectl get pods -n kubeslice-system
-
-# Check EGS license status
-kubectl get secret egs-license-file -n kubeslice-controller
-```
-
-#### Monitoring Access
-
-```bash
-# Get monitoring service details
-kubectl get svc -n monitoring
-
-# Access Grafana (replace with your node IP)
+# Access Grafana
 kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
 
-# Access Prometheus (replace with your node IP)
+# Access Prometheus
 kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
 ```
 
