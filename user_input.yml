@@ -320,7 +320,7 @@ helm_charts:
     release_namespace: "cert-manager"
     create_namespace: true
     wait: true
-    timeout: "300s"
+    timeout: "400s"
     force: true
     atomic: false
     skip_diff: true
@@ -344,7 +344,7 @@ helm_charts:
     release_namespace: "kubeslice-controller"
     create_namespace: true
     wait: true
-    timeout: "300s"
+    timeout: "400s"
     force: true
     atomic: false
     skip_diff: true
@@ -381,7 +381,7 @@ helm_charts:
     release_namespace: "kubeslice-controller"
     create_namespace: true
     wait: true
-    timeout: "300s"
+    timeout: "400s"
     force: true
     atomic: false
     skip_diff: true
@@ -431,7 +431,7 @@ helm_charts:
     release_namespace: "kubeslice-system"
     create_namespace: true
     wait: true
-    timeout: "300s"
+    timeout: "400s"
     force: true
     atomic: false
     skip_diff: true
@@ -481,7 +481,7 @@ helm_charts:
     release_namespace: "{{ metallb.namespace }}"
     create_namespace: true
     wait: true
-    timeout: "300s"
+    timeout: "400s"
     force: true
     atomic: false
     skip_diff: true
@@ -512,7 +512,7 @@ helm_charts:
     release_namespace: "ingress-nginx"
     create_namespace: true
     wait: true
-    timeout: "300s"
+    timeout: "400s"
     force: true
     atomic: false
     skip_diff: true
@@ -573,7 +573,7 @@ helm_charts:
     release_namespace: "gpu-operator"
     create_namespace: true
     wait: false
-    timeout: "300s"
+    timeout: "400s"
     force: true
     atomic: false
     skip_diff: true
@@ -604,7 +604,7 @@ helm_charts:
     release_namespace: "amd-gpu-operator"
     create_namespace: true
     wait: false
-    timeout: "300s"
+    timeout: "400s"
     force: true
     atomic: false
     skip_diff: true
@@ -617,7 +617,7 @@ helm_charts:
     release_namespace: "monitoring"
     create_namespace: true
     wait: false
-    timeout: "300s"
+    timeout: "400s"
     force: false
     atomic: false
     skip_diff: true
@@ -682,7 +682,7 @@ helm_charts:
     release_namespace: "kt-postgresql"
     create_namespace: true
     wait: true
-    timeout: "300s"
+    timeout: "400s"
     force: true
     atomic: false
     skip_diff: true
