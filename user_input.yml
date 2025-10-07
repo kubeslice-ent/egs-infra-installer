@@ -454,11 +454,6 @@ helm_charts:
       egs:
         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
-      egsAgent:
-        secretName: egs-agent-access
-        agentSecret:
-          endpoint: ""
-          key: ""
       metrics:
         insecure: true
       kserve:
