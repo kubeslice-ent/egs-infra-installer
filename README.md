@@ -104,6 +104,17 @@ kubernetes_deployment:
       ansible_become_method: "sudo"
       ansible_become_user: "root"
       private_ip: "PRIVATE_IP"        # Internal/private IP
+
+  # worker_nodes: []                   # Uncomment and configure for multi-node setup
+  # Example worker node configuration (for multi-node setups only):
+  # worker_nodes:
+  #   - name: "worker-1"
+  #     ansible_host: "WORKER_PUBLIC_IP"
+  #     ansible_user: "REPLACE_SSH_USER"
+  #     ansible_become: true
+  #     ansible_become_method: "sudo"
+  #     ansible_become_user: "root"
+  #     private_ip: "WORKER_PRIVATE_IP"
 ```
 
 #### ⚙️ For Single Node: Quick Configuration Update (Command-Line Shortcut)
@@ -135,7 +146,8 @@ sed -i \
 
 #### 📌 Note:
 
-If you're deploying on a **single node** and running the command from the **same server**, you can use the **same IP address** for both `PUBLIC_IP` and `PRIVATE_IP`.
+- **Single Node**: If you're deploying on a **single node** and running the command from the **same server**, you can use the **same IP address** for both `PUBLIC_IP` and `PRIVATE_IP`. The `worker_nodes` section should remain commented out.
+- **Multi-Node**: For multi-node setups, uncomment and configure both `control_plane_nodes` and `worker_nodes` sections with their respective IP addresses.
 
 ---
 
