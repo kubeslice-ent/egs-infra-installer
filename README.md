@@ -421,19 +421,6 @@ kubectl get secret kubeslice-rbac-rw-admin -o jsonpath="{.data.token}" -n kubesl
 2. **Enter the access token** from step b) when prompted for "Service Account Token"
 3. **Start managing** your EGS clusters, projects, and GPU resources
 
-### Step 5.4: Monitoring Access
-
-```bash
-# Access Grafana
-kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
-
-# Access Prometheus
-kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
-```
-
-- **Grafana Dashboard**: [http://localhost:3000](http://localhost:3000) (admin/prom-operator)
-- **Prometheus UI**: [http://localhost:9090](http://localhost:9090)
-
 ---
 
 ## 6. Multiple Worker Cluster Registration
