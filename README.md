@@ -165,6 +165,8 @@ sed -i \
 
 ## 4. EGS License Setup
 
+> ⚠️ **Important**: License setup must be completed BEFORE installing any EGS components. The cluster fingerprint generation and license application are prerequisites for all EGS installations.
+
 ### Step 4.1: Generate Cluster Fingerprint
 
 The installer will automatically generate a cluster fingerprint required for EGS license generation:
@@ -424,14 +426,14 @@ The deployment process follows a specific execution order defined in `user_input
 - `amd_gpu_deviceconfig_manifest` - AMD GPU device configuration and settings
 
 #### EGS Installation
+- `generate_cluster_fingerprint` - Generate cluster fingerprint for license (REQUIRED FIRST)
+- `validate_and_apply_egs_license` - Validate and apply EGS license (REQUIRED SECOND)
 - `kubeslice_controller_egs_chart` - KubeSlice EGS controller for multi-cluster management
 - `kubeslice_ui_egs_chart` - KubeSlice EGS management UI interface
 - `kubeslice_worker_egs_chart` - KubeSlice EGS worker for cluster management
 - `egs_project_manifest` - EGS project configuration
 - `egs_cluster_registration_worker_1` - Register worker cluster
 - `fetch_worker_secret_worker_1` - Fetch worker authentication secrets
-- `generate_cluster_fingerprint` - Generate cluster fingerprint for license
-- `validate_and_apply_egs_license` - Validate and apply EGS license
 - `kubeslice_worker_egs_worker_1` - Install EGS worker components
 
 
@@ -445,6 +447,11 @@ ansible-playbook site.yml \
   --extra-vars "execution_order=['gpu_operator_chart','prometheus_stack']" \
   -vv
 
+# Execute EGS license setup first (required before any EGS components)
+ansible-playbook site.yml \
+  --extra-vars "execution_order=['generate_cluster_fingerprint','validate_and_apply_egs_license']" \
+  -vv
+
 # Execute EGS installation with license setup
 ansible-playbook site.yml \
   --extra-vars "execution_order=['generate_cluster_fingerprint','validate_and_apply_egs_license','kubeslice_controller_egs_chart','kubeslice_ui_egs_chart']" \
@@ -455,7 +462,7 @@ ansible-playbook site.yml \
   --extra-vars "execution_order=['cert_manager','amd_gpu_operator_chart','amd_gpu_deviceconfig_manifest']" \
   -vv
 
-# Execute complete EGS installation
+# Execute complete EGS installation (license first, then components)
 ansible-playbook site.yml \
   --extra-vars "execution_order=['generate_cluster_fingerprint','validate_and_apply_egs_license','kubeslice_controller_egs_chart','kubeslice_ui_egs_chart','kubeslice_worker_egs_chart','egs_project_manifest','egs_cluster_registration_worker_1','fetch_worker_secret_worker_1']" \
   -vv
