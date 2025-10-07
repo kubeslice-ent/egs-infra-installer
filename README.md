@@ -1,6 +1,6 @@
 # Avesha Apps Installer
 
-Ansible-based installer for Avesha EGS (Enterprise Gateway Service) components and Kubernetes cluster deployment.
+Ansible-based installer for Avesha EGS (Elastic GPU Service) components and Kubernetes cluster deployment.
 
 ## Table of Contents
 
@@ -499,4 +499,4 @@ For support, questions, or contributions to the Avesha Apps Installer:
 
 ## License
 
-This project is part of the Avesha EGS (Enterprise Gateway Service) ecosystem. Please refer to the EGS license terms and conditions for usage rights and restrictions.
+This project is part of the Avesha EGS (Elastic GPU Service) ecosystem. Please refer to the EGS license terms and conditions for usage rights and restrictions.
