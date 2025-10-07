@@ -261,6 +261,7 @@ execution_order:
 
   # Base Applications
   - label_nodes_gateway            # Label all nodes with kubeslice.io/node-type=gateway
+  - configure_systemd_limits       # Configure systemd limits for GPU device plugins
   - gpu_operator_chart
   - prometheus_stack
   - postgresql                     # PostgreSQL database for EGS components
@@ -1026,3 +1027,12 @@ command_exec:
             echo "    key: $(cat -)" >> output/worker-1-values.yaml
           
           echo "Worker values file generated at output/worker-1-values.yaml"
+
+  - name: "configure_systemd_limits"
+    kubeconfig: "{{ kubeconfig | default(global_kubeconfig) }}"
+    kubecontext: "{{ kubecontext | default(global_kubecontext) }}"
+    commands:
+      - cmd: "bash {{ playbook_dir }}/files/configure-systemd-limits.sh"
+        env:
+          KUBECONFIG: "{{ kubeconfig | default(global_kubeconfig) }}"
+          KUBECONTEXT: "{{ kubecontext | default(global_kubecontext) }}"

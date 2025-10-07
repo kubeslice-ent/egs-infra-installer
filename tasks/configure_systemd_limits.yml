@@ -1,0 +1,110 @@
+---
+# Configure systemd limits for kubelet and container runtime
+# This prevents "too many open files" errors with GPU device plugins
+
+- name: Create kubelet systemd override directory
+  file:
+    path: "{{ kubelet_systemd_override_dir }}"
+    state: directory
+    mode: '0755'
+  when: configure_systemd_limits | default(true)
+
+- name: Configure kubelet systemd limits
+  copy:
+    content: |
+      [Service]
+      LimitNOFILE={{ systemd_limits.nofile }}
+      LimitNPROC={{ systemd_limits.nproc }}
+      LimitMEMLOCK={{ systemd_limits.memlock }}
+      LimitSTACK={{ systemd_limits.stack }}
+    dest: "{{ kubelet_systemd_override_file }}"
+    mode: '0644'
+  when: configure_systemd_limits | default(true)
+
+- name: Create containerd systemd override directory
+  file:
+    path: "{{ containerd_systemd_override_dir }}"
+    state: directory
+    mode: '0755'
+  when: 
+    - configure_systemd_limits | default(true)
+    - container_runtime == 'containerd'
+
+- name: Configure containerd systemd limits
+  copy:
+    content: |
+      [Service]
+      LimitNOFILE={{ systemd_limits.nofile }}
+      LimitNPROC={{ systemd_limits.nproc }}
+      LimitMEMLOCK={{ systemd_limits.memlock }}
+      LimitSTACK={{ systemd_limits.stack }}
+    dest: "{{ containerd_systemd_override_file }}"
+    mode: '0644'
+  when: 
+    - configure_systemd_limits | default(true)
+    - container_runtime == 'containerd'
+
+- name: Create docker systemd override directory
+  file:
+    path: "{{ docker_systemd_override_dir }}"
+    state: directory
+    mode: '0755'
+  when: 
+    - configure_systemd_limits | default(true)
+    - container_runtime == 'docker'
+
+- name: Configure docker systemd limits
+  copy:
+    content: |
+      [Service]
+      LimitNOFILE={{ systemd_limits.nofile }}
+      LimitNPROC={{ systemd_limits.nproc }}
+      LimitMEMLOCK={{ systemd_limits.memlock }}
+      LimitSTACK={{ systemd_limits.stack }}
+    dest: "{{ docker_systemd_override_file }}"
+    mode: '0644'
+  when: 
+    - configure_systemd_limits | default(true)
+    - container_runtime == 'docker'
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+  when: configure_systemd_limits | default(true)
+
+- name: Restart kubelet service
+  systemd:
+    name: kubelet
+    state: restarted
+  when: configure_systemd_limits | default(true)
+
+- name: Restart containerd service
+  systemd:
+    name: containerd
+    state: restarted
+  when: 
+    - configure_systemd_limits | default(true)
+    - container_runtime == 'containerd'
+
+- name: Restart docker service
+  systemd:
+    name: docker
+    state: restarted
+  when: 
+    - configure_systemd_limits | default(true)
+    - container_runtime == 'docker'
+
+- name: Verify systemd limits are applied
+  shell: |
+    systemctl show kubelet --property=LimitNOFILE --value
+  register: kubelet_limits
+  when: configure_systemd_limits | default(true)
+
+- name: Display applied limits
+  debug:
+    msg: |
+      Systemd limits configured successfully:
+      - Kubelet NOFILE limit: {{ kubelet_limits.stdout }}
+      - Container runtime: {{ container_runtime }}
+      - All services restarted
+  when: configure_systemd_limits | default(true)
