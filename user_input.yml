@@ -681,9 +681,9 @@ helm_charts:
     chart_ref: "./postgresql"
     release_namespace: "kt-postgresql"
     create_namespace: true
-    wait: true
+    wait: false
     timeout: "300s"
-    force: true
+    force: false
     atomic: false
     skip_diff: true
     dependencies: []
@@ -696,7 +696,7 @@ helm_charts:
         database: "postgres"
       primary:
         persistence:
-          enabled: false
+          enabled: true
           size: 10Gi
     helm_flags: "--wait --debug"
     verify_install: true
