@@ -263,19 +263,19 @@ execution_order:
   - label_nodes_gateway            # Label all nodes with kubeslice.io/node-type=gateway
   - gpu_operator_chart
   - prometheus_stack
-  - validate_and_apply_egs_license  # Validate and apply EGS license before EGS installation
 
   # AMD GPU Support
   # - amd_gpu_operator_chart         # Install AMD GPU operator for AMD GPU support,enable cert-manager as well from above section.
   # - amd_gpu_deviceconfig_manifest  # Configure AMD GPU device settings
   
   # EGS Application
-  # - kubeslice_controller_egs  # Install EGS controller first
-  # - kubeslice_ui_egs         # Install EGS UI after controller
-  # - egs_project_manifest              # Create EGS project
-  # - egs_cluster_registration_worker_1 # Register worker-1 cluster
-  # - fetch_worker_secret_worker_1 # Fetch worker secret after registration
-  # - kubeslice_worker_egs_worker_1 # Install worker after fetching secret
+  - validate_and_apply_egs_license  # Validate and apply EGS license before EGS installation
+  - kubeslice_controller_egs  # Install EGS controller first
+  - kubeslice_ui_egs         # Install EGS UI after controller
+  - egs_project_manifest              # Create EGS project
+  - egs_cluster_registration_worker_1 # Register worker-1 cluster
+  - fetch_worker_secret_worker_1 # Fetch worker secret after registration
+  - kubeslice_worker_egs_worker_1 # Install worker after fetching secret
 
 
 ###############################################################################
