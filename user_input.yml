@@ -263,6 +263,7 @@ execution_order:
   - label_nodes_gateway            # Label all nodes with kubeslice.io/node-type=gateway
   - gpu_operator_chart
   - prometheus_stack
+  - postgresql                     # PostgreSQL database for EGS components
   - validate_and_apply_egs_license  # Validate and apply EGS license before EGS installation
 
   # AMD GPU Support
@@ -461,7 +462,7 @@ helm_charts:
   # MetalLB Chart Configuration
   metallb_chart:
     release_name: "metallb"
-    chart_ref: "metallb"
+    chart_ref: "./metallb"
     release_namespace: "{{ metallb.namespace }}"
     create_namespace: true
     wait: true
@@ -470,7 +471,6 @@ helm_charts:
     atomic: false
     skip_diff: true
     dependencies: []
-    chart_repo_url: "https://metallb.github.io/metallb"
     chart_version: "0.13.10"
     release_values:
       prometheus:
@@ -493,7 +493,7 @@ helm_charts:
   # Nginx Ingress Controller Chart
   nginx_ingress_chart:
     release_name: "ingress-nginx"
-    chart_ref: "ingress-nginx"
+    chart_ref: "./ingress-nginx"
     release_namespace: "ingress-nginx"
     create_namespace: true
     wait: true
@@ -502,8 +502,6 @@ helm_charts:
     atomic: false
     skip_diff: true
     dependencies: []
-    chart_repo_url: "https://kubernetes.github.io/ingress-nginx"
-    chart_repo_name: "ingress-nginx"
     chart_version: "4.7.1"
     release_values:
       controller:
@@ -556,7 +554,7 @@ helm_charts:
 
   gpu_operator_chart:
     release_name: "gpu-operator"
-    chart_ref: "gpu-operator"
+    chart_ref: "./gpu-operator"
     release_namespace: "gpu-operator"
     create_namespace: true
     wait: false
@@ -565,7 +563,6 @@ helm_charts:
     atomic: false
     skip_diff: true
     chart_version: "v25.3.0"
-    chart_repo_url: "https://helm.ngc.nvidia.com/nvidia"
     dependencies: []
     release_values:
       mig:
@@ -601,7 +598,7 @@ helm_charts:
   # Prometheus Stack
   prometheus_stack:
     release_name: "prometheus"
-    chart_ref: "kube-prometheus-stack"
+    chart_ref: "./kube-prometheus-stack"
     release_namespace: "monitoring"
     create_namespace: true
     wait: false
@@ -609,7 +606,6 @@ helm_charts:
     force: false
     atomic: false
     skip_diff: true
-    chart_repo_url: "https://prometheus-community.github.io/helm-charts"
     chart_version: "55.5.0"
     release_values:
       kubeEtcd:
@@ -663,6 +659,34 @@ helm_charts:
           accessModes: ["ReadWriteOnce"]
         service:
           type: NodePort
+
+  # PostgreSQL Chart Configuration
+  postgresql:
+    release_name: "kt-postgresql"
+    chart_ref: "./postgresql"
+    release_namespace: "kt-postgresql"
+    create_namespace: true
+    wait: true
+    timeout: "300s"
+    force: true
+    atomic: false
+    skip_diff: true
+    dependencies: []
+    chart_version: "16.2.1"
+    release_values:
+      auth:
+        postgresPassword: "postgres"
+        username: "postgres"
+        password: "postgres"
+        database: "postgres"
+      primary:
+        persistence:
+          enabled: false
+          size: 10Gi
+    helm_flags: "--wait --debug"
+    verify_install: true
+    verify_install_timeout: 600
+    skip_on_verify_fail: false
 
 
 ###############################################################################
