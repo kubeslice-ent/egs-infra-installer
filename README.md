@@ -360,7 +360,11 @@ kubectl get svc kubeslice-ui-proxy -n kubeslice-controller -o jsonpath='{.status
 kubectl get svc kubeslice-ui-proxy -n kubeslice-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null
 
 # For NodePort service type
+# Try ExternalIP first, fallback to InternalIP if not available
 NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null | head -n1)
+if [ -z "$NODE_IP" ]; then
+    NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null | head -n1)
+fi
 NODE_PORT=$(kubectl get svc kubeslice-ui-proxy -n kubeslice-controller -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null)
 echo "https://$NODE_IP:$NODE_PORT"
 
