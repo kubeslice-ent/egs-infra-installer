@@ -415,7 +415,11 @@ helm_charts:
         apigw:
           env:
             - name: DCGM_METRIC_JOB_VALUE
+              value: gpu-metrics
+            - name: KUBESLICE_METRIC_JOB_VALUE
               value: nvidia-dcgm-exporter
+            - name: DCGM_METRIC_HOSTNAME_KEY
+              value: kubernetes_node
         egsCoreApis:
           enabled: true
           service:
