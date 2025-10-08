@@ -412,7 +412,7 @@ echo "https://localhost:8080"
 
 ```bash
 # Get access token for EGS UI
-kubectl get secret kubeslice-rbac-rw-admin -o jsonpath="{.data.token}" -n kubeslice-avesha --kubeconfig output/kubeconfig --context kubernetes-admin@cluster.local 2>/dev/null | base64 --decode
+kubectl get secret kubeslice-rbac-rw-admin -o jsonpath="{.data.token}" -n kubeslice-avesha 2>/dev/null | base64 --decode
 ```
 
 #### c) Access EGS Management UI
@@ -473,7 +473,6 @@ The UI approach provides:
 - **[Kubernetes Firewall Configuration](docs/KUBERNETES_FIREWALL.md)** - Network and firewall setup
 - **[NVIDIA Container Runtime Configuration](docs/NVIDIA_CONTAINER_RUNTIME.md)** - GPU runtime setup
 - **[EGS License Setup](docs/EGS-License-Setup.md)** - EGS license configuration guide
-- **[Retry Mechanism](docs/RETRY_MECHANISM.md)** - Retry mechanism configuration and troubleshooting
 
 ---
 
