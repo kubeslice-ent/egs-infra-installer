@@ -23,7 +23,7 @@ Ansible-based installer for Avesha EGS (Elastic GPU Service) components and Kube
 - **Operating System**: Ubuntu 20.04 LTS or later
 - **Minimum RAM**: 8GB per node (16GB recommended)
 - **CPU**: 4 cores per node (8 cores recommended)
-- **Storage**: 50GB free disk space per node
+- **Storage**: 60GB free disk space per node
 - **Network**: All nodes must be able to communicate with each other
 
 ### Required Software
@@ -72,7 +72,11 @@ LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 ansible-galaxy collection install -r require
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/k8s_rsa -N ""
 
 # Copy SSH key to each node (repeat for all nodes)
+# For Password-Based Authentication
 ssh-copy-id -i ~/.ssh/k8s_rsa.pub user@node-ip
+
+# For PEM Key-Based Authentication
+ssh-copy-id -f -i ~/.ssh/k8s_rsa.pub -o "IdentityFile=~/path/your_pem_key.pem" -o StrictHostKeyChecking=no user@node-ip
 ```
 
 ### Step 2.3: Configure user_input.yml
@@ -395,13 +399,42 @@ kubectl get svc kubeslice-ui-proxy -n kubeslice-controller -o jsonpath='{.status
 kubectl get svc kubeslice-ui-proxy -n kubeslice-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null
 
 # For NodePort service type
-# Try ExternalIP first, fallback to InternalIP if not available
-NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null | head -n1)
-if [ -z "$NODE_IP" ]; then
-    NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null | head -n1)
+# Function to check if an IP is private (RFC 1918 ranges)
+is_private_ip() {
+    local ip=$1
+    if [[ $ip =~ ^10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] ||
+       [[ $ip =~ ^172\.(1[6-9]|2[0-9]|3[0-1])\.[0-9]{1,3}\.[0-9]{1,3}$ ]] ||
+       [[ $ip =~ ^192\.168\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        return 0  # Private
+    else
+        return 1  # Public or not an IP
+    fi
+}
+
+# Try control plane endpoint first (may provide public IP/hostname)
+CONTROL_IP=$(kubectl cluster-info | grep "control plane" | sed -E 's#.*https://([^:]+):.*#\1#' 2>/dev/null | head -n1)
+
+# Determine NODE_IP: Use control plane if public/hostname, else fallback
+if [ -z "$CONTROL_IP" ] || { [[ $CONTROL_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] && is_private_ip "$CONTROL_IP"; }; then
+    # Fallback to node ExternalIP/InternalIP
+    NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null | head -n1)
+    if [ -z "$NODE_IP" ]; then
+        NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null | head -n1)
+    fi
+else
+    NODE_IP="$CONTROL_IP"
 fi
+
+# Extract NodePort of the kubeslice-ui-proxy service
 NODE_PORT=$(kubectl get svc kubeslice-ui-proxy -n kubeslice-controller -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null)
-echo "https://$NODE_IP:$NODE_PORT"
+
+# Print the final external URL
+if [ -n "$NODE_IP" ] && [ -n "$NODE_PORT" ]; then
+    echo "Kubeslice UI URL: https://$NODE_IP:$NODE_PORT"
+else
+    echo "Error: Could not determine IP or NodePort. Ensure kubectl is configured and the service exists."
+    exit 1
+fi
 
 # For ClusterIP service type (port-forward required)
 kubectl port-forward -n kubeslice-controller svc/kubeslice-ui-proxy 8080:443

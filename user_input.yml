@@ -370,6 +370,13 @@ helm_charts:
       kubeslice:
         controller:
           endpoint: "https://{{ kubernetes_deployment.api_server.host }}:{{ kubernetes_deployment.api_server.port }}"
+          replication:
+            minio:
+              install: "true"
+              storage: "1Gi"
+              storageClassName: "local-path"
+              service:
+                type: "ClusterIP"
       imagePullSecrets:
         registry: "{{ global_image_pull_secret.repository }}"
         username: "{{ global_image_pull_secret.username }}"
@@ -542,11 +549,11 @@ helm_charts:
             timeoutSeconds: 15
         resources:
           requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
             cpu: "1000m"
             memory: "1024Mi"
-          limits:
-            cpu: "2000m"
-            memory: "2048Mi"
         readinessProbe:
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -561,11 +568,11 @@ helm_charts:
           type: NodePort
         resources:
           requests:
-            cpu: "1000m"
-            memory: "2048"
+            cpu: "500m"
+            memory: "512Mi"
           limits:
-            cpu: "2000m"
-            memory: "4096Mi"
+            cpu: "1000m"
+            memory: "1024Mi"
 
   gpu_operator_chart:
     release_name: "gpu-operator"
@@ -710,6 +717,13 @@ helm_charts:
         persistence:
           enabled: true
           size: 10Gi
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "250m"
     helm_flags: "--wait --debug"
     verify_install: true
     verify_install_timeout: 600
