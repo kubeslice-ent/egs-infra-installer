@@ -69,7 +69,6 @@
       register: k8s_requirements
       failed_when: k8s_requirements.rc != 0
       changed_when: false
-      delegate_to: localhost
 
     - name: Validate Kubernetes requirements
       fail:
@@ -96,7 +95,6 @@
         kubectl_version.failed | default(false) or
         helm_version.failed | default(false) or
         k8s_requirements.failed | default(false)
-      delegate_to: localhost
 
 - name: Display Kubernetes Skip Prerequisites Warning
   debug:
