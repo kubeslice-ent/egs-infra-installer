@@ -50,6 +50,12 @@ spec:
         - name: spire-agent
           image: {{ .Values.global.imageRegistry }}/{{ .Values.spireAgent.imageRegistry }}:{{ .Values.spireAgent.imageTag }}
           args: ["-config", "/run/spire/config/agent.conf"]
+          env:
+            - name: MY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
           volumeMounts:
             - name: spire-config
               mountPath: /run/spire/config
