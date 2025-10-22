@@ -1,0 +1,32 @@
+---
+# Systemd limits configuration for GPU device plugins
+# This prevents "too many open files" errors with GPU operators
+
+# Kubelet systemd limits
+kubelet_systemd_override_dir: "/etc/systemd/system/kubelet.service.d"
+kubelet_systemd_override_file: "{{ kubelet_systemd_override_dir }}/limits.conf"
+
+# Container runtime systemd limits
+containerd_systemd_override_dir: "/etc/systemd/system/containerd.service.d"
+containerd_systemd_override_file: "{{ containerd_systemd_override_dir }}/limits.conf"
+
+# Docker systemd limits (if using Docker instead of containerd)
+docker_systemd_override_dir: "/etc/systemd/system/docker.service.d"
+docker_systemd_override_file: "{{ docker_systemd_override_dir }}/limits.conf"
+
+# Systemd limits configuration
+systemd_limits:
+  # File descriptor limits
+  nofile: 65536
+  # Process limits
+  nproc: 32768
+  # Memory limits (unlimited for GPU workloads)
+  memlock: -1
+  # Additional limits for GPU workloads
+  stack: 8192
+
+# Enable systemd limits configuration
+configure_systemd_limits: true
+
+# Container runtime to configure (containerd or docker)
+container_runtime: "{{ 'containerd' if containerd_enabled | default(true) else 'docker' }}"
