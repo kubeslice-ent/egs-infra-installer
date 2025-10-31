@@ -13,6 +13,12 @@ cluster_name: cluster.local
 ## Container Runtime Configuration
 container_manager: {{ kubernetes_deployment.container_runtime | default('containerd') }}
 
+## Cgroup Driver Configuration
+# CRITICAL: Both containerd and kubelet must use the same cgroup driver
+# Using systemd cgroup driver for proper resource management
+containerd_use_systemd_cgroup: true
+kubelet_cgroup_driver: systemd
+
 ## Network Configuration
 kube_network_plugin: {{ kubernetes_deployment.network_plugin | default('calico') }}
 kube_service_addresses: {{ kubernetes_deployment.network_config.service_subnet | default('10.233.0.0/18') }}
