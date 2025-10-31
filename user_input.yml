@@ -26,6 +26,20 @@ kubernetes_deployment:
     secure: true                 # Whether to use HTTPS for API server connections
                                 # Should always be true in production environments
 
+  # Control Plane Component Configuration
+  # Configure tolerations and other settings for control plane components
+  control_plane:
+    # Tolerations for control plane components (API server, controller manager, scheduler, etcd)
+    # These allow control plane pods to be scheduled on tainted nodes
+    tolerations:
+      - key: "kubeslice.io/egs"           # Taint key to tolerate
+        value: "dedicated-node"           # Taint value to match
+        effect: "NoSchedule"              # Taint effect (NoSchedule, PreferNoSchedule, or NoExecute)
+    # Add more tolerations as needed:
+    # - key: "another-taint"
+    #   value: "some-value"
+    #   effect: "NoSchedule"
+
   # SSH Access Configuration
   # Required for Kubespray to access and configure nodes
   ssh_key_path: "/absolute/path/to/.ssh/k8s_rsa"  # Full path to the SSH private key file
