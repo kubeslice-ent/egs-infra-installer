@@ -18,7 +18,9 @@ kubernetes_deployment:
     host: "PUBLIC_IP"        # Load balancer VIP or first master for initial setup
     port: 6443                   # Standard Kubernetes API port (will be load balanced)
                                 # Standard Kubernetes API port - change only if required
-    bind_address: "0.0.0.0"      # Listen on all interfaces
+    bind_address: "0.0.0.0"      # Listen on all IPv4 interfaces (use 0.0.0.0, not ::)
+                                # Use 0.0.0.0 for IPv4-only or specific IPv4 address
+                                # Do NOT use :: as it enables dual-stack (IPv4+IPv6)
     secure: true                 # Whether to use HTTPS for API server connections
                                 # Should always be true in production environments
 
@@ -88,6 +90,9 @@ kubernetes_deployment:
                                    # Must not overlap with service_subnet or node network
     node_prefix: 24                 # Subnet mask for node network
                                   # /24 allows 256 IP addresses per subnet
+    ipv4_stack: true                # Enable IPv4 networking (default: true)
+    ipv6_stack: false               # Disable IPv6 networking (default: false)
+                                   # Set to false to ensure all components use IPv4 only
 
   # Firewall Configuration
   # Controls access to cluster nodes
@@ -154,7 +159,8 @@ kubernetes_deployment:
     localhost:
       enabled: true                        # DEFAULT: Always enabled (works for single/multi-master)
       lb_type: "haproxy"                   # Using HAProxy for enterprise-grade load balancing
-      bind_address: "0.0.0.0"             # DEFAULT: Bind to all interfaces
+      bind_address: "0.0.0.0"             # DEFAULT: Bind to all IPv4 interfaces
+                                         # Use 0.0.0.0 for IPv4-only (not :: for dual-stack)
       api_port_offset: 1                  # DEFAULT: API server port = client_port + offset (6443+1=6444)
       pod_name: "haproxy"                 # HAProxy load balancer pod name
       healthcheck_port: 8081              # DEFAULT: Health monitoring port

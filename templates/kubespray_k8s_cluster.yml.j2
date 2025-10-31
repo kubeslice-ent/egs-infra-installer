@@ -22,6 +22,11 @@ kube_service_addresses: {{ kubernetes_deployment.network_config.service_subnet |
 kube_pods_subnet: {{ kubernetes_deployment.network_config.pod_subnet | default('10.233.64.0/18') }}
 kube_network_node_prefix: {{ kubernetes_deployment.network_config.node_prefix | default(24) }}
 
+# IPv4/IPv6 Stack Configuration
+# Force IPv4-only stack - disable IPv6 to ensure all components use IPv4 only
+ipv4_stack: {{ kubernetes_deployment.network_config.get('ipv4_stack', true) }}
+ipv6_stack: {{ kubernetes_deployment.network_config.get('ipv6_stack', false) }}
+
 # DNS configuration
 dns_mode: {{ kubernetes_deployment.dns_mode | default('coredns') }}
 dns_domain: "{{ kubernetes_deployment.cluster_name | default('cluster.local') }}"
@@ -46,6 +51,7 @@ kube_apiserver_endpoint: "https://{{ kubernetes_deployment.control_plane_nodes[0
 {% endif %}
 
 # API Server configuration
+# Force IPv4 bind address (0.0.0.0) instead of dual-stack (::)
 kube_apiserver_bind_address: "{{ kubernetes_deployment.api_server.bind_address | default('0.0.0.0') }}"
 {% if kubernetes_deployment.get('load_balancer', {}).get('localhost', {}).get('enabled', false) -%}
 {% set client_port = kubernetes_deployment.api_server.port | default(6443) -%}
@@ -55,6 +61,10 @@ kube_apiserver_port: {{ api_server_port }}
 {% else -%}
 kube_apiserver_port: {{ kubernetes_deployment.api_server.port | default(6443) }}
 {% endif %}
+
+# Controller Manager and Scheduler - Force IPv4 bind addresses
+kube_controller_manager_bind_address: "{{ kubernetes_deployment.get('control_plane', {}).get('controller_manager_bind_address', '0.0.0.0') }}"
+kube_scheduler_bind_address: "{{ kubernetes_deployment.get('control_plane', {}).get('scheduler_bind_address', '0.0.0.0') }}"
 
 ###############################################################################
 # CERTIFICATE CONFIGURATION - CRITICAL FOR FIXING CERTIFICATE ERRORS
