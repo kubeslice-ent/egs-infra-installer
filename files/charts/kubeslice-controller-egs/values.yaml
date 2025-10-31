@@ -99,7 +99,7 @@ kubeslice:
       # Configuration for MinIO
       minio:
         # Whether to install MinIO
-        install: "true"
+        install: "false"
         # Storage size for MinIO
         storage: 1Gi
         # Username for MinIO
