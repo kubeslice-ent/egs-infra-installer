@@ -1,8 +1,22 @@
 ---
-# Configure API server to listen on both internal and external IPs
+# IPv4/IPv6 Stack Configuration - Force IPv4-only
+ipv4_stack: true
+ipv6_stack: false
+
+# API Server Configuration - Force IPv4 bind address
+# Use 0.0.0.0 to bind to all IPv4 interfaces (NOT :: which enables dual-stack)
+kube_apiserver_bind_address: "0.0.0.0"
+
+# Controller Manager Configuration - Force IPv4 bind address
+kube_controller_manager_bind_address: "0.0.0.0"
+
+# Scheduler Configuration - Force IPv4 bind address
+kube_scheduler_bind_address: "0.0.0.0"
+
+# Legacy configuration for backwards compatibility (if needed)
 apiserver_extra_vars:
   # Add both internal and external IPs to bind addresses
-  kube_apiserver_bind_address: "{{ ansible_default_ipv4_address }}"
+  kube_apiserver_bind_address: "0.0.0.0"
   kube_apiserver_advertise_address: "{{ ansible_default_ipv4_address }}"
   # Add both IPs to the certificate SANs
   supplementary_addresses_in_ssl_keys: 
@@ -13,4 +27,4 @@ apiserver_extra_vars:
   # Configure loadbalancer settings from user input
   loadbalancer_apiserver:
     address: "{{ kubernetes_deployment.api_server.host }}"
-    port: "{{ kubernetes_deployment.api_server.port }}" 
+    port: "{{ kubernetes_deployment.api_server.port }}"
