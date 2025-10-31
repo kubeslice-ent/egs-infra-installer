@@ -18,9 +18,11 @@ kubernetes_deployment:
     host: "PUBLIC_IP"        # Load balancer VIP or first master for initial setup
     port: 6443                   # Standard Kubernetes API port (will be load balanced)
                                 # Standard Kubernetes API port - change only if required
-    bind_address: "0.0.0.0"      # Listen on all IPv4 interfaces (use 0.0.0.0, not ::)
-                                # Use 0.0.0.0 for IPv4-only or specific IPv4 address
-                                # Do NOT use :: as it enables dual-stack (IPv4+IPv6)
+    bind_address_mode: "private_ip"  # How to bind Kubernetes components (default: private_ip)
+                                     # Options:
+                                     #   - "private_ip": Bind to node's private IP (RECOMMENDED - prevents dual-stack)
+                                     #   - "all_interfaces": Bind to 0.0.0.0 (all IPv4 interfaces)
+                                     # Note: private_ip is the default and prevents tcp6 binding issues
     secure: true                 # Whether to use HTTPS for API server connections
                                 # Should always be true in production environments
 

@@ -27,6 +27,22 @@ ipv6_stack: {{ kubernetes_deployment.network_config.get('ipv6_stack', false) }}
 # Disable IPv6 system-wide on all nodes (OS level)
 disable_ipv6_system_wide: {{ kubernetes_deployment.network_config.get('disable_ipv6_system_wide', true) }}
 
+# Bind address configuration - use private IP to avoid dual-stack issues
+{% set bind_mode = kubernetes_deployment.api_server.get('bind_address_mode', 'private_ip') -%}
+{% if bind_mode == 'private_ip' -%}
+kube_apiserver_bind_address: "{{ '{{' }} ansible_default_ipv4.address {{ '}}' }}"
+kube_controller_manager_bind_address: "{{ '{{' }} ansible_default_ipv4.address {{ '}}' }}"
+kube_scheduler_bind_address: "{{ '{{' }} ansible_default_ipv4.address {{ '}}' }}"
+kubelet_bind_address: "{{ '{{' }} ansible_default_ipv4.address {{ '}}' }}"
+kube_proxy_bind_address: "{{ '{{' }} ansible_default_ipv4.address {{ '}}' }}"
+{% else -%}
+kube_apiserver_bind_address: "0.0.0.0"
+kube_controller_manager_bind_address: "0.0.0.0"
+kube_scheduler_bind_address: "0.0.0.0"
+kubelet_bind_address: "0.0.0.0"
+kube_proxy_bind_address: "0.0.0.0"
+{% endif -%}
+
 ## DNS Configuration
 dns_mode: {{ kubernetes_deployment.dns_mode | default('coredns') }}
 resolvconf_mode: host_resolvconf
@@ -60,13 +76,7 @@ nginx_bind_address: "{{ kubernetes_deployment.load_balancer.localhost.bind_addre
 {% endif -%}
 
 # API Server - binds to backend port to avoid conflict with load balancer
-# Force IPv4 bind address (0.0.0.0) instead of dual-stack (::)
 kube_apiserver_port: {{ api_server_port }}
-kube_apiserver_bind_address: "{{ kubernetes_deployment.api_server.bind_address | default('0.0.0.0') }}"
-
-# Controller Manager and Scheduler - Force IPv4 bind addresses
-kube_controller_manager_bind_address: "{{ kubernetes_deployment.get('control_plane', {}).get('controller_manager_bind_address', '0.0.0.0') }}"
-kube_scheduler_bind_address: "{{ kubernetes_deployment.get('control_plane', {}).get('scheduler_bind_address', '0.0.0.0') }}"
 
 # Backend configuration for load balancer
 {% if kubernetes_deployment.load_balancer.localhost.lb_type == 'haproxy' -%}
@@ -102,13 +112,7 @@ loadbalancer_apiserver:
 apiserver_loadbalancer_domain_name: {{ kubernetes_deployment.load_balancer.external.domain_name }}
 {% endif -%}
 # API server configuration for external load balancer (uses same port as external LB)
-# Force IPv4 bind address (0.0.0.0) instead of dual-stack (::)
 kube_apiserver_port: {{ kubernetes_deployment.api_server.port | default(6443) }}
-kube_apiserver_bind_address: "{{ kubernetes_deployment.api_server.bind_address | default('0.0.0.0') }}"
-
-# Controller Manager and Scheduler - Force IPv4 bind addresses
-kube_controller_manager_bind_address: "{{ kubernetes_deployment.get('control_plane', {}).get('controller_manager_bind_address', '0.0.0.0') }}"
-kube_scheduler_bind_address: "{{ kubernetes_deployment.get('control_plane', {}).get('scheduler_bind_address', '0.0.0.0') }}"
 {% elif kubernetes_deployment.load_balancer.enabled and kubernetes_deployment.load_balancer.type == "kube-vip" and kubernetes_deployment.load_balancer.kube_vip.enabled -%}
 # kube-vip Configuration
 kube_vip_controlplane_enabled: {{ kubernetes_deployment.load_balancer.kube_vip.controlplane_enabled | default(true) | lower }}
@@ -119,24 +123,12 @@ kube_vip_leader_election_enabled: {{ kubernetes_deployment.load_balancer.kube_vi
 kube_vip_cidr: {{ kubernetes_deployment.load_balancer.kube_vip.cidr | default(24) }}
 loadbalancer_apiserver_localhost: false
 # API server configuration for kube-vip
-# Force IPv4 bind address (0.0.0.0) instead of dual-stack (::)
 kube_apiserver_port: {{ kubernetes_deployment.api_server.port | default(6443) }}
-kube_apiserver_bind_address: "{{ kubernetes_deployment.api_server.bind_address | default('0.0.0.0') }}"
-
-# Controller Manager and Scheduler - Force IPv4 bind addresses
-kube_controller_manager_bind_address: "{{ kubernetes_deployment.get('control_plane', {}).get('controller_manager_bind_address', '0.0.0.0') }}"
-kube_scheduler_bind_address: "{{ kubernetes_deployment.get('control_plane', {}).get('scheduler_bind_address', '0.0.0.0') }}"
 {% else -%}
 # Load Balancer Disabled: Direct API server access
 loadbalancer_apiserver_localhost: false
 # API server configuration from user_input.yml with defaults
-# Force IPv4 bind address (0.0.0.0) instead of dual-stack (::)
 kube_apiserver_port: {{ kubernetes_deployment.api_server.port | default(6443) }}
-kube_apiserver_bind_address: "{{ kubernetes_deployment.api_server.bind_address | default('0.0.0.0') }}"
-
-# Controller Manager and Scheduler - Force IPv4 bind addresses
-kube_controller_manager_bind_address: "{{ kubernetes_deployment.get('control_plane', {}).get('controller_manager_bind_address', '0.0.0.0') }}"
-kube_scheduler_bind_address: "{{ kubernetes_deployment.get('control_plane', {}).get('scheduler_bind_address', '0.0.0.0') }}"
 {% endif %}
 
 ## etcd Configuration
