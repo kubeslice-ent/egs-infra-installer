@@ -87,6 +87,31 @@
     reload: true
   when: ipv6_stack | bool
 
+- name: Disable IPv6 system-wide
+  block:
+    - name: Create IPv6 disable sysctl file
+      copy:
+        dest: /etc/sysctl.d/99-disable-ipv6.conf
+        content: |
+          net.ipv6.conf.all.disable_ipv6 = 1
+          net.ipv6.conf.default.disable_ipv6 = 1
+          net.ipv6.conf.lo.disable_ipv6 = 1
+        mode: "0644"
+        owner: root
+        group: root
+      tags:
+        - bootstrap_os
+
+    - name: Apply sysctl IPv6 disable settings
+      command: sysctl --system
+      register: sysctl_ipv6_result
+      changed_when: true
+      tags:
+        - bootstrap_os
+  when: disable_ipv6_system_wide | default(false) | bool
+  tags:
+    - bootstrap_os
+
 - name: Check if we need to set fs.may_detach_mounts
   stat:
     path: /proc/sys/fs/may_detach_mounts
