@@ -19,6 +19,24 @@ container_manager: {{ kubernetes_deployment.container_runtime | default('contain
 containerd_use_systemd_cgroup: true
 kubelet_cgroup_driver: systemd
 
+## Control Plane Tolerations
+# Add custom tolerations to control plane components via kubeadm patches
+{% if kubernetes_deployment.control_plane.get('tolerations', []) | length > 0 %}
+kubeadm_patches:
+{% for component in ['kube-apiserver', 'kube-controller-manager', 'kube-scheduler', 'etcd'] %}
+  - target: {{ component }}
+    type: strategic
+    patch:
+      spec:
+        tolerations:
+{% for toleration in kubernetes_deployment.control_plane.tolerations %}
+          - key: {{ toleration.key }}
+            value: {{ toleration.value }}
+            effect: {{ toleration.effect }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+
 ## Network Configuration
 kube_network_plugin: {{ kubernetes_deployment.network_plugin | default('calico') }}
 kube_service_addresses: {{ kubernetes_deployment.network_config.service_subnet | default('10.233.0.0/18') }}
