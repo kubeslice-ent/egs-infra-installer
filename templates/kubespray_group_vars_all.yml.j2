@@ -19,7 +19,7 @@ container_manager: {{ kubernetes_deployment.container_runtime | default('contain
 containerd_use_systemd_cgroup: true
 kubelet_cgroup_driver: systemd
 
-## Control Plane Tolerations
+## Control Plane and System Component Tolerations
 # Add custom tolerations to control plane components via kubeadm patches
 {% if kubernetes_deployment.control_plane.get('tolerations', []) | length > 0 %}
 kubeadm_patches:
@@ -34,6 +34,14 @@ kubeadm_patches:
             value: {{ toleration.value }}
             effect: {{ toleration.effect }}
 {% endfor %}
+{% endfor %}
+
+# Add tolerations to CoreDNS (and other DNS components)
+dns_extra_tolerations:
+{% for toleration in kubernetes_deployment.control_plane.tolerations %}
+  - key: {{ toleration.key }}
+    value: {{ toleration.value }}
+    effect: {{ toleration.effect }}
 {% endfor %}
 {% endif %}
 
