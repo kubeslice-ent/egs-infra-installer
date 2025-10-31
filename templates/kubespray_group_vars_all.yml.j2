@@ -25,7 +25,7 @@ ipv4_stack: {{ kubernetes_deployment.network_config.get('ipv4_stack', true) }}
 ipv6_stack: {{ kubernetes_deployment.network_config.get('ipv6_stack', false) }}
 
 # Disable IPv6 system-wide on all nodes (OS level)
-disable_ipv6_system_wide: {{ kubernetes_deployment.network_config.get('disable_ipv6_system_wide', false) }}
+disable_ipv6_system_wide: {{ kubernetes_deployment.network_config.get('disable_ipv6_system_wide', true) }}
 
 ## DNS Configuration
 dns_mode: {{ kubernetes_deployment.dns_mode | default('coredns') }}

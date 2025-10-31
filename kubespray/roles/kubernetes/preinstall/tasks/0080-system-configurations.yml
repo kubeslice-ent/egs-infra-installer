@@ -99,6 +99,7 @@
         mode: "0644"
         owner: root
         group: root
+      ignore_errors: true
       tags:
         - bootstrap_os
 
@@ -106,9 +107,10 @@
       command: sysctl --system
       register: sysctl_ipv6_result
       changed_when: true
+      ignore_errors: true
       tags:
         - bootstrap_os
-  when: disable_ipv6_system_wide | default(false) | bool
+  when: disable_ipv6_system_wide | default(true) | bool
   tags:
     - bootstrap_os
 
