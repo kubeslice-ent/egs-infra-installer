@@ -20,11 +20,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      tolerations:
-        - key: "kubeslice.io/egs"
-          operator: "Equal"
-          value: "dedicated-node"
-          effect: "NoSchedule"
+      {{- if .Values.egsGpuAgent.tolerations }}
+      tolerations: {{ toYaml .Values.egsGpuAgent.tolerations | nindent 8 }}
+      {{- end }}
       serviceAccountName: egs-gpu-agent-access
       {{- with .Values.egsGpuAgent.podSecurityContext }}
       securityContext:
@@ -33,8 +31,8 @@ spec:
       containers:
       # Main egs-gpu-agent container
       - name: egs-gpu-agent
-        image: "{{ .Values.global.imageRegistry }}/{{ .Values.egsGpuAgent.image }}:{{ .Values.egsGpuAgent.tag }}"
-        imagePullPolicy: {{ .Values.egsGpuAgent.pullPolicy }}
+        image: {{ include "kubeslice.image" (dict "imageRoot" .Values.egsGpuAgent "global" .Values.global) }}
+        imagePullPolicy: {{ include "kubeslice.imagePullPolicy" (dict "pullPolicy" .Values.egsGpuAgent.pullPolicy "global" .Values.global) }}
         {{- with .Values.egsGpuAgent.containerSecurityContext }}
         securityContext:
           {{- toYaml . | nindent 10 }}
@@ -60,10 +58,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
 
-      {{- with .Values.egsGpuAgent.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
 ---
 # Service Account for GPU Agent
 apiVersion: v1
