@@ -473,6 +473,7 @@ The UI approach provides:
 - **[Kubernetes Firewall Configuration](docs/KUBERNETES_FIREWALL.md)** - Network and firewall setup
 - **[NVIDIA Container Runtime Configuration](docs/NVIDIA_CONTAINER_RUNTIME.md)** - GPU runtime setup
 - **[EGS License Setup](docs/EGS-License-Setup.md)** - EGS license configuration guide
+- **[Systemd Limits Configuration](docs/SYSTEMD_LIMITS_CONFIGURATION.md)** - GPU device plugin systemd limits setup
 
 ---
 
